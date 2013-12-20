@@ -94,6 +94,7 @@
     display: none;
   }
   .switch [type="checkbox"] + div {
+    display: inline-block;
     vertical-align: middle;
     width: 40px;  height: 20px;
     border: 1px solid rgba(0,0,0,.4);
@@ -133,18 +134,17 @@
   .switch [type="checkbox"] + div > div:after {
     content: 'off';
     position: relative;
-    top: 3px;
+    top: 2px;
     left: 2px;
     font-size: 11px;
     -webkit-transition-duration: 0.4s;
     -webkit-transition-property: color;
     -moz-transition-duration: 0.4s;
     -moz-transition-property: color;
-    color: rgb(245, 245, 245);
+    color: #ffffff;
   }
   .switch [type="checkbox"]:checked + div > div:after {
     content: 'on';
-    top: 2px;
     left: 3px;
     color:  rgb(64, 64, 64);
   }
