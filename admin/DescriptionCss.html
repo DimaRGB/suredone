@@ -6,6 +6,7 @@
     var $table = $content.find('form .settings-form');
     collapseInit($table);
     switchInit();
+    categoriesInit();
   }
 
   function collapseInit(context) {
@@ -61,6 +62,34 @@
     $(this)
       .siblings('select')
       .val(value);
+  }
+
+  function categoriesInit() {
+    $('#sd-taxonomy').addClass('categories');
+    $('.categories')
+      .find('>div')
+      .addClass('category')
+      .end()
+      .find('select')
+      .categoryToggle()
+      .on('change', categoryChange);
+  }
+
+  function categoryChange() {
+    $(this)
+      .closest('.categories')
+      .find('select')
+      .categoryToggle();
+  }
+
+  $.fn.categoryToggle = function() {
+    this.each(function() {
+      var enabled = $(this).is(':enabled');
+      $(this)
+        .closest('.category')
+        .toggle(enabled);
+    });
+    return this;
   }
 </script>
 
