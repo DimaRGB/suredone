@@ -1,8 +1,12 @@
+body {
+	background: lightgray;
+}
+
 .switch [type="checkbox"] { 
-	position: absolute;
-	/*opacity: 0;*/
+	/*display: none;*/
 }
 .switch [type="checkbox"] + div {
+	display: inline-block;
 	vertical-align: middle;
 	width: 40px;	height: 20px;
 	border: 1px solid rgba(0,0,0,.4);
@@ -11,7 +15,6 @@
 	-webkit-transition-duration: .4s;
 	-webkit-transition-property: background-color, box-shadow;
 	box-shadow: inset 0 0 0 0px rgba(0, 0, 0, 0.4);
-	margin: 15px 1.2em 15px 2.5em;
 }
 .switch [type="checkbox"]:checked + div {
 	background-color: #00e359;
@@ -39,4 +42,18 @@
 	-moz-transform: translate3d(20px, 0, 0);
 	background-color: #ffffff;
 	box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 162, 63,1);
+}
+
+#gravatar-test [type=email] {
+	font-size: 20px;
+	width: 300px;
+}
+
+#gravatar-test [type=submit] {
+	font-size: 20px;
+	-webkit-appearance: none;
+}
+
+#gravatar-test img {
+	margin: 20px;
 }
