@@ -17,7 +17,7 @@
 
 		$email = 'dima.rgb@gmail.com';
 		$k = 1;
-		for( $size = 1; $size < 100; $size += $k )
+		for( $size = 1; $size < 33; $size += $k )
 			echo '<img src="'. getGravatarImageUrl($email, $size) .'" />';
 	?>
 

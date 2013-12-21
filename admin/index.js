@@ -9,6 +9,7 @@ jQuery(function($) {
 				url: form.action,
 				data: $(form).serialize(),
 				success: function(url) {
+					// console.log(url);
 					$(form).append('<img src=' + url + ' />');
 				},
 				error: function(error) {
