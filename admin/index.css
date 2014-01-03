@@ -1,3 +1,14 @@
+.dz-default {
+  display: inline-block;
+  padding: 16px;
+  background: beige;
+  border-radius: 8px;
+  box-shadow: 0 0 4px black;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -user-select: none;
+}
+
 .collapse>th {
   position: relative;
   cursor: pointer;
@@ -20,6 +31,7 @@
 }
 
 .switch {
+  display: inline-block;
   -webkit-user-select: none;
   -moz-user-select: none;
 }
@@ -80,4 +92,35 @@
   content: 'on';
   left: 3px;
   color:  rgb(64, 64, 64);
+}
+
+.mceEditor {
+  display: block;
+  margin-top: 10px;
+}
+
+.btn {
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: #f7f7f7;
+  background: #69c;
+  opacity: 0.9;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+.btn:hover {
+  opacity: 1;
+}
+.btn:active {
+  opacity: 1;
+  box-shadow: inset 0 3px 5px rgba(0,0,0,0.125);
+}
+
+div>.btn-reset-default {
+  text-align: center;
+}
+.btn-reset-default {
+  margin: 12px;
 }

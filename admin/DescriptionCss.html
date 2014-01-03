@@ -1,18 +1,124 @@
-<script>
-  jQuery(function($) {
-    console.log('Description CSS Ready');
-    collapseInit();
-    switchInit();
-    categoriesInit();
-  });
+<!-- connect external plugins: qtip, dropzone -->
+<link href='https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.css' rel='stylesheet' />
+<script src='https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.js'></script>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/css/dropzone.min.css' rel='stylesheet' />
+<script src='https://cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/dropzone.min.js'></script>
 
-  function collapseInit() {
+<script>
+  // bind document ready and ajax ready events with ready handler
+  $(document).on('ready ajaxRenderPageReady', ready);
+
+  // ready handler: init all features
+  function ready() {
+    console.log('Description CSS Ready');
+    initSwitchWsywyg();
+    initCollapse();
+    initSwitchSelect();
+    initCategories();
+    initResetDefaultButton();
+    initTooltip();
+    initImage();
+  }
+
+  // init dropzone plugin for images
+  function initImage() {
+    $('#sd-editor-single')
+      .find('#sd-media')
+      .find('>div')
+      .hide()
+      .end()
+      .append("<div><form action='#' class='dropzone'><div class='fallback'><input type='file' multiply /></div></form></div>");
+  }
+
+  // init tooltips for inputs
+  function initTooltip() {
+    $(':input').qtip({
+      position: {
+        my: 'top center',
+        at: 'bottom center',
+      },
+      style: {
+        classes: 'qtip-green qtip-shadow'
+      }
+    });
+  }
+
+  // init reset default button for reset inputs with attribute data-default-value
+  function initResetDefaultButton() {
+    $('form:not(#sdin-search)')
+      .append("<label><input type='button' class='btn btn-reset-default' value='Reset Default' /></label>")
+      .find('.btn-reset-default')
+      .on('click', resetDefaultButtonClick);
+  }
+
+  // reset default button click handler
+  function resetDefaultButtonClick() {
+    $(this)
+      .closest('form')
+      .find('input')
+      .each(function() {
+        var defaultValue = $(this).data('defaultValue');
+        if( defaultValue )
+          $(this).val(defaultValue);
+      });
+  }
+
+  // init switches for collapsing Wsywyg editors
+  function initSwitchWsywyg() {
+    $('.tinymce')
+      .before("<label class='switch-box'><input type='checkbox' checked /><div class='switch'><div></div></div></label>")
+      .siblings('.switch-box')
+      .on('change', switchWsywygChange);
+  }
+
+  // switches change handler for collapsing Wsywyg editors
+  function switchWsywygChange() {
+    var checked = $(this)
+      .find('[type=checkbox]')
+      .is(':checked');
+    $(this)
+      .siblings('.mce-tinymce')
+      .stop()
+      .slideToggle(checked);
+  }
+
+  // init on/off switches
+  function initSwitchSelect() {
+    $('select').each(function() {
+      var $options = $('option', this);
+      if( $options.length != 2 || !$options.is('[value=on], [value=off]') )
+        return;
+
+      var checked = $(this).val() == 'on';
+      $(this)
+        .hide()
+        .wrap("<label class='switch-box' />")
+        .before("<input type='checkbox' /><div class='switch'><div></div></div>")
+        .siblings('[type=checkbox]')
+        .prop('checked', checked)
+        .on('change', switchSelectChange)
+        .find('>div')
+        .text($(this).val());
+    });
+  }
+
+  // on/off switches change handler
+  function switchSelectChange() {
+    var value = $(this).is(':checked') ? 'on' : 'off';
+    $(this)
+      .siblings('select')
+      .val(value);
+  }
+
+  // init sections for collapsing
+  function initCollapse() {
     var $table = $('#sd-content form .settings-form');
     $('.settings-section-title', $table).each(function() {
       if( $(this).parent().next().find('.settings-section-title').length )
         return;
       $(this)
-        .prepend('<span class="active">–</span>')
+        .wrapInner('<span class="text" />')
+        .prepend('<span class="icon active">–</span>')
         .parent()
         .addClass('collapse')
         .on('click', collapseSectionToggle);
@@ -21,48 +127,25 @@
     $('.collapse').click();
   }
 
+  // toggling handler for collapse sections
   function collapseSectionToggle() {
     var text = $(this).next().is(':hidden') ? '–' : '+';
     $(this)
-      .find('th>span')
+      .find('th .icon')
       .toggleClass('active')
       .text(text)
       .end()
       .nextUntil('.collapse')
       .not('.non-collapsible')
+      .stop()
       .fadeToggle({
         duration: 300,
         easing: 'easeOutExpo',
       });
   }
 
-  function switchInit() {
-    $('select').each(function() {
-      var $options = $('option', this);
-      if( $options.length != 2 || !$options.is('[value=on], [value=off]') )
-        return;
-
-      var checked = $(this).val() == 'on';
-      $(this)
-        .wrap('<label class="switch" />')
-        .hide()
-        .before('<input type="checkbox" /><div><div></div></div>')
-        .siblings('[type=checkbox]')
-        .prop('checked', checked)
-        .on('change', switchChange)
-        .find('>div')
-        .text($(this).val());
-    });
-  }
-
-  function switchChange() {
-    var value = $(this).is(':checked') ? 'on' : 'off';
-    $(this)
-      .siblings('select')
-      .val(value);
-  }
-
-  function categoriesInit() {
+  // init categories
+  function initCategories() {
     $('#sd-taxonomy').addClass('categories');
     $('.categories')
       .find('>div')
@@ -73,6 +156,7 @@
       .on('change', categoryChange);
   }
 
+  // categories change selection handler
   function categoryChange() {
     $(this)
       .closest('.categories')
@@ -80,6 +164,7 @@
       .categoryToggle();
   }
 
+  // categories toggling handler
   $.fn.categoryToggle = function() {
     this.each(function() {
       var enabled = $(this).is(':enabled');
@@ -93,11 +178,14 @@
 </script>
 
 <style>
+  /* rules for collapsing icon +/- and text */
   .collapse>th {
     position: relative;
     cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
   }
-  .collapse>th>span {
+  .collapse>th>.icon {
     content: '+';
     display: inline-block;
     margin-left: 4px;
@@ -110,18 +198,24 @@
     box-shadow: 0 0 1px rgba(42, 97, 62, 1);
     text-align: center;
   }
-  .collapse>th>span.active {
+  .collapse>th>.icon.active {
     background: #A0A870;
   }
+  .collapse>th>.text {
+    -webkit-user-select: initial;
+    -moz-user-select: initial;
+  }
 
-  .switch {
+  /* rules for switches */
+  .switch-box {
+    display: inline-block;
     -webkit-user-select: none;
     -moz-user-select: none;
   }
-  .switch [type=checkbox] {
+  .switch-box [type=checkbox] {
     display: none;
   }
-  .switch [type=checkbox] + div {
+  .switch-box [type=checkbox] + .switch {
     display: inline-block;
     vertical-align: middle;
     width: 40px;  height: 20px;
@@ -132,12 +226,12 @@
     -webkit-transition-property: background-color, box-shadow;
     box-shadow: inset 0 0 0 0px rgba(0, 0, 0, 0.4);
   }
-  .switch [type=checkbox]:checked + div {
+  .switch-box [type=checkbox]:checked + .switch {
     background-color: #00e359;
     border: 1px solid rgba(0, 162, 63,1);
     box-shadow: inset 0 0 0 10px rgba(0, 227, 89, 1);
   }
-  .switch [type=checkbox] + div > div {
+  .switch-box [type=checkbox] + .switch > div {
     float: left;
     width: 18px; height: 18px;
     border-radius: inherit;
@@ -153,13 +247,13 @@
     margin-top: 1px;
     margin-left: 1px;
   }
-  .switch [type=checkbox]:checked + div > div {
+  .switch-box [type=checkbox]:checked + .switch > div {
     -webkit-transform: translate3d(20px, 0, 0);
     -moz-transform: translate3d(20px, 0, 0);
     background-color:  #ffffff;
     box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 162, 63,1);
   }
-  .switch [type=checkbox] + div > div:after {
+  .switch-box [type=checkbox] + .switch > div:after {
     content: 'off';
     position: relative;
     top: 2px;
@@ -171,9 +265,42 @@
     -moz-transition-property: color;
     color: #ffffff;
   }
-  .switch [type=checkbox]:checked + div > div:after {
+  .switch-box [type=checkbox]:checked + .switch > div:after {
     content: 'on';
     left: 3px;
     color:  rgb(64, 64, 64);
+  }
+  
+  .mce-tinymce {
+    display: block;
+    margin-top: 10px;
+  }
+
+  /* rules for custom buttons */
+  .btn {
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: #f7f7f7;
+    background: #69c;
+    opacity: 0.9;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+  }
+  .btn:hover {
+    opacity: 1;
+  }
+  .btn:active {
+    opacity: 1;
+    box-shadow: inset 0 3px 5px rgba(0,0,0,0.125);
+  }
+
+  /* rules for reset default buttons */
+  div>.btn-reset-default {
+    text-align: center;
+  }
+  .btn-reset-default {
+    margin: 12px;
   }
 </style>
