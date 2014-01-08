@@ -11,7 +11,7 @@
   // ready handler: init all features
   function ready() {
     console.log('Description CSS Ready');
-    initSwitchWsywyg();
+    // initSwitchWsywyg();
     initCollapse();
     initSwitchSelect();
     initCategories();
@@ -69,15 +69,15 @@
   // init reset default button for reset inputs with attribute data-default-value
   function initResetDefaultButton() {
     $('form:not(#sdin-search)')
-      .append("<label><input type='button' class='btn btn-reset-default' value='Reset Default' /></label>")
-      .find('.btn-reset-default')
+      .after("<label><input type='button' class='btn btn-reset-default' value='Reset Default' /></label>")
+      .siblings('.btn-reset-default')
       .on('click', resetDefaultButtonClick);
   }
 
   // reset default button click handler
   function resetDefaultButtonClick() {
     $(this)
-      .closest('form')
+      .siblings('form')
       .find('input')
       .each(function() {
         var defaultValue = $(this).data('defaultValue');
@@ -330,5 +330,11 @@
   /* rules for reset images button */
   .btn-reset-img {
     margin-top: 8px;
+  }
+
+  /* rules for fixing dropzone default image */
+  .dropzone .dz-default {
+    width: 428px !important;
+    background-image: url('https://cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/images/spritemap.png') !important;
   }
 </style>
