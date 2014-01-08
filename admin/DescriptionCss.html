@@ -167,7 +167,7 @@
   // categories toggling handler
   $.fn.categoryToggle = function() {
     this.each(function() {
-      var enabled = $(this).is(':enabled') && $(this).find('option').length == 1;
+      var enabled = $(this).is(':enabled') && $(this).find('option').length > 1;
       $(this)
         .closest('.category')
         .toggle(enabled);
