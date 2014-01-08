@@ -27,8 +27,30 @@
       .find('>div')
       .hide()
       .end()
-      .append("<div><form action='#' class='dropzone'><div class='fallback'><input type='file' multiply /></div></form></div>");
+      .append("<div class='dropzone-box'><form action='#' class='dropzone'><div class='fallback'><input type='file' multiply /></div></form><input type='button' class='btn btn-reset-img' value='Reset images'></div>")
+      .find('.btn-reset-img')
+      .click(resetImagesClick);
     Dropzone.discover();
+  }
+
+  // reset images click handler
+  function resetImagesClick() {
+    // reset new images
+    $(this)
+      .siblings('.dropzone')
+      .find('.dz-preview')
+      .remove();
+    // reset old images
+    $(this)
+      .closest('#sd-media')
+      .find('>div:not(.dropzone-box)')
+      .find('.field-input>span')
+      .each(function() {
+        if( $(this).find('>a').remove().length ) {
+          var number = $(this).attr('id').replace('sd-media', '');
+          $(this).prepend('<input type="file" name="sd_media' + number + '">');
+        }
+      });
   }
 
   // init tooltips for inputs
@@ -303,5 +325,10 @@
   }
   .btn-reset-default {
     margin: 12px;
+  }
+
+  /* rules for reset images button */
+  .btn-reset-img {
+    margin-top: 8px;
   }
 </style>
