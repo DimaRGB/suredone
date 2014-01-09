@@ -11,13 +11,36 @@
   // ready handler: init all features
   function ready() {
     console.log('Description CSS Ready');
-    // initSwitchWsywyg();
     initCollapse();
     initSwitchSelect();
     initCategories();
     initResetDefaultButton();
     initTooltip();
     initImage();
+    initDeleteItemsButtons();
+  }
+
+  function initDeleteItemsButtons() {
+    // in List Page
+    $('#elements-content')
+      .find('>tbody').first()
+      .find('>tr').each(function() {
+        var editLink = $('.elements-title>span>a', this).first().attr('href');
+        var deleteLink = getDeleteLink(editLink);
+        $(this)
+          .find('.elements-title>span>span')
+          .before(' | <a href="' + deleteLink + '">Delete</a>');
+      });
+    // in Edit Page
+    $('#sd-editor-single')
+      .find('.field-submit')
+      .append('<a href="' + getDeleteLink() + '">Delete</a>')
+  } 
+
+  function getDeleteLink(editLink) {
+    if( !editLink )
+      editLink = location.href;
+    return editLink.replace('do=edit', 'do=delete');
   }
 
   // init dropzone plugin for images
@@ -84,25 +107,6 @@
         if( defaultValue )
           $(this).val(defaultValue);
       });
-  }
-
-  // init switches for collapsing Wsywyg editors
-  function initSwitchWsywyg() {
-    $('.tinymce')
-      .before("<label class='switch-box'><input type='checkbox' checked /><div class='switch'><div></div></div></label>")
-      .siblings('.switch-box')
-      .on('change', switchWsywygChange);
-  }
-
-  // switches change handler for collapsing Wsywyg editors
-  function switchWsywygChange() {
-    var checked = $(this)
-      .find('[type=checkbox]')
-      .is(':checked');
-    $(this)
-      .siblings('.mce-tinymce')
-      .stop()
-      .slideToggle(checked);
   }
 
   // init on/off switches
