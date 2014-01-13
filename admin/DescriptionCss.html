@@ -32,8 +32,10 @@
   // init tinymce toggling
   function initTinymceToggle() {
     $('.tinymce')
-      .before("<div class='switch-box'>")
-      .siblings('.switch-box')
+      .parent()
+      .wrapInner('<div />')
+      .prepend("<div class='switch-box'>")
+      .find('.switch-box')
       .append("<input type='checkbox' />")
       .find('[type=checkbox]')
       .switchButton({
@@ -250,12 +252,12 @@
 <style>
   /* rules for switch-box */
   .switch-box { margin: 8px 0; }
-  .switch-box [type=checkbox] + .switch-button-label+.switch-button-background {
+  .switch-box [type=checkbox]+.switch-button-label+.switch-button-background {
     background-color: red;
     transition: background-color 0.25s;
     -webkit-transition: background-color 0.25s; /* Safari */
   }
-  .switch-box [type=checkbox]:checked + .switch-button-label+.switch-button-background {
+  .switch-box [type=checkbox]:checked+.switch-button-label+.switch-button-background {
     background-color: blue;
   }
 
