@@ -20,6 +20,7 @@
     initDeleteItemsButtons();
   }
 
+  // init delete link and button
   function initDeleteItemsButtons() {
     // in List Page
     $('#elements-content')
@@ -29,14 +30,20 @@
         var deleteLink = getDeleteLink(editLink);
         $(this)
           .find('.elements-title>span>span')
-          .before(' | <a href="' + deleteLink + '">Delete</a>');
+          .before(' | <a class="delete-item-btn" href="' + deleteLink + '">Delete</a>');
       });
     // in Edit Page
     $('#sd-editor-single')
       .find('.field-submit')
-      .append('<a href="' + getDeleteLink() + '">Delete</a>')
-  } 
+      .append('<a class="delete-item-btn" href="' + getDeleteLink() + '">Delete</a>');
 
+    $('.delete-item-btn').click(function(e) {
+      if( !confirm('Delete item? There is no undo.') )
+        e.preventDefault();
+    });
+  }
+
+  // get delete link in parameter or in location
   function getDeleteLink(editLink) {
     if( !editLink )
       editLink = location.href;
