@@ -9,8 +9,8 @@
 <script src='https://cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/dropzone.min.js'></script>
 
 <!-- switchButton -->
-<link href='https://assets.suredone.com/1737/css/jquery.switchButton.css' rel='stylesheet' />
-<script src='https://assets.suredone.com/1737/scripts/jquery.switchButton.js'></script>
+<link href='https://cdn.jsdelivr.net/jquery.switchbutton/1.0/jquery.switchButton.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/jquery.switchbutton/1.0/jquery.switchButton.js'></script>
 
 <script>
   // bind document ready and ajax ready events with ready handler
@@ -26,6 +26,35 @@
     initTooltip();
     initImage();
     initDeleteItemsButtons();
+    initTinymceToggle();
+  }
+
+  // init tinymce toggling
+  function initTinymceToggle() {
+    $('.tinymce')
+      .before("<div class='switch-box'>")
+      .siblings('.switch-box')
+      .append("<input type='checkbox' />")
+      .find('[type=checkbox]')
+      .switchButton({
+        checked: true
+      })
+      .change(tinymceSwitchChange);
+  }
+
+  // switch change handler for togging tinymce: html / editor
+  function tinymceSwitchChange() {
+    var $switchBox = $(this).parent();
+    var $tinymceContainer = $switchBox.siblings('.mce-container');
+    var $textArea = $switchBox.siblings('.tinymce');
+    var tinymceEditor = tinymce.get($textArea.attr('id'));
+    var isChecked = $(this).is(':checked');
+    if( isChecked )
+      tinymceEditor.setContent($textArea.val());
+    else
+      $textArea.val(tinymceEditor.getContent());
+    $textArea.slideToggle(!isChecked);
+    $tinymceContainer.slideToggle(isChecked);
   }
 
   // init delete link and button
@@ -220,12 +249,15 @@
 
 <style>
   /* rules for switch-box */
-  .switch-box .switch-button-background {
+  .switch-box { margin: 8px 0; }
+  .switch-box [type=checkbox] + .switch-button-label+.switch-button-background {
     background-color: red;
     transition: background-color 0.25s;
     -webkit-transition: background-color 0.25s; /* Safari */
   }
-  .switch-box .switch-button-background.checked { background-color: blue; }
+  .switch-box [type=checkbox]:checked + .switch-button-label+.switch-button-background {
+    background-color: blue;
+  }
 
   /* rules for collapsing icon +/- and text */
   .collapse>th {
@@ -253,11 +285,6 @@
   .collapse>th>.text {
     -webkit-user-select: initial;
     -moz-user-select: initial;
-  }
-  
-  .mce-tinymce {
-    display: block;
-    margin-top: 10px;
   }
 
   /* rules for custom buttons */
