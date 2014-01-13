@@ -1,8 +1,16 @@
-<!-- connect external plugins: qtip, dropzone -->
+<!-- connect external plugins: -->
+
+<!-- qtip -->
 <link href='https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.css' rel='stylesheet' />
 <script src='https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.js'></script>
+
+<!-- dropzone -->
 <link href='https://cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/css/dropzone.min.css' rel='stylesheet' />
 <script src='https://cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/dropzone.min.js'></script>
+
+<!-- switchButton -->
+<link href='https://assets.suredone.com/1737/css/jquery.switchButton.css' rel='stylesheet' />
+<script src='https://assets.suredone.com/1737/scripts/jquery.switchButton.js'></script>
 
 <script>
   // bind document ready and ajax ready events with ready handler
@@ -126,13 +134,12 @@
       var checked = $(this).val() == 'on';
       $(this)
         .hide()
-        .wrap("<label class='switch-box' />")
-        .before("<input type='checkbox' /><div class='switch'><div></div></div>")
+        .wrap("<div class='switch-box' />")
+        .before("<input type='checkbox' />")
         .siblings('[type=checkbox]')
         .prop('checked', checked)
         .on('change', switchSelectChange)
-        .find('>div')
-        .text($(this).val());
+        .switchButton();
     });
   }
 
@@ -212,6 +219,14 @@
 </script>
 
 <style>
+  /* rules for switch-box */
+  .switch-box .switch-button-background {
+    background-color: red;
+    transition: background-color 0.25s;
+    -webkit-transition: background-color 0.25s; /* Safari */
+  }
+  .switch-box .switch-button-background.checked { background-color: blue; }
+
   /* rules for collapsing icon +/- and text */
   .collapse>th {
     position: relative;
@@ -238,71 +253,6 @@
   .collapse>th>.text {
     -webkit-user-select: initial;
     -moz-user-select: initial;
-  }
-
-  /* rules for switches */
-  .switch-box {
-    display: inline-block;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-  }
-  .switch-box [type=checkbox] {
-    display: none;
-  }
-  .switch-box [type=checkbox] + .switch {
-    display: inline-block;
-    vertical-align: middle;
-    width: 40px;  height: 20px;
-    border: 1px solid rgba(0,0,0,.4);
-    border-radius: 999px;
-    background-color: rgba(0, 0, 0, 0.1);
-    -webkit-transition-duration: .4s;
-    -webkit-transition-property: background-color, box-shadow;
-    box-shadow: inset 0 0 0 0px rgba(0, 0, 0, 0.4);
-  }
-  .switch-box [type=checkbox]:checked + .switch {
-    background-color: #00e359;
-    border: 1px solid rgba(0, 162, 63,1);
-    box-shadow: inset 0 0 0 10px rgba(0, 227, 89, 1);
-  }
-  .switch-box [type=checkbox] + .switch > div {
-    float: left;
-    width: 18px; height: 18px;
-    border-radius: inherit;
-    background-color:  rgb(143, 143, 143);
-    -webkit-transition-timing-function: cubic-bezier(.54,1.85,.5,1);
-    -webkit-transition-duration: 0.4s;
-    -webkit-transition-property: transform, background-color, box-shadow;
-    -moz-transition-timing-function: cubic-bezier(.54,1.85,.5,1);
-    -moz-transition-duration: 0.4s;
-    -moz-transition-property: transform, background-color;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3), 0px 0px 0 1px rgba(0, 0, 0, 0.4);
-    pointer-events: none;
-    margin-top: 1px;
-    margin-left: 1px;
-  }
-  .switch-box [type=checkbox]:checked + .switch > div {
-    -webkit-transform: translate3d(20px, 0, 0);
-    -moz-transform: translate3d(20px, 0, 0);
-    background-color:  #ffffff;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 162, 63,1);
-  }
-  .switch-box [type=checkbox] + .switch > div:after {
-    content: 'off';
-    position: relative;
-    top: 2px;
-    left: 2px;
-    font-size: 11px;
-    -webkit-transition-duration: 0.4s;
-    -webkit-transition-property: color;
-    -moz-transition-duration: 0.4s;
-    -moz-transition-property: color;
-    color: #ffffff;
-  }
-  .switch-box [type=checkbox]:checked + .switch > div:after {
-    content: 'on';
-    left: 3px;
-    color:  rgb(64, 64, 64);
   }
   
   .mce-tinymce {
