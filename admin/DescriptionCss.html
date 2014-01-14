@@ -46,17 +46,17 @@
 
   // switch change handler for togging tinymce: html / editor
   function tinymceSwitchChange() {
-    var $switchBox = $(this).parent();
-    var $tinymceContainer = $switchBox.siblings('.mce-container');
-    var $textArea = $switchBox.siblings('.tinymce');
+    var $td = $(this).parent().parent();
+    var $tinymceContainer = $td.find('.mce-tinymce');
+    var $textArea = $td.find('.tinymce');
     var tinymceEditor = tinymce.get($textArea.attr('id'));
     var isChecked = $(this).is(':checked');
     if( isChecked )
       tinymceEditor.setContent($textArea.val());
     else
       $textArea.val(tinymceEditor.getContent());
-    $textArea.slideToggle(!isChecked);
     $tinymceContainer.slideToggle(isChecked);
+    $textArea.slideToggle(!isChecked);
   }
 
   // init delete link and button
@@ -253,13 +253,15 @@
   /* rules for switch-box */
   .switch-box { margin: 8px 0; }
   .switch-box [type=checkbox]+.switch-button-label+.switch-button-background {
-    background-color: red;
+    background-color: red !important;
     transition: background-color 0.25s;
     -webkit-transition: background-color 0.25s; /* Safari */
   }
   .switch-box [type=checkbox]:checked+.switch-button-label+.switch-button-background {
-    background-color: blue;
+    background-color: blue !important;
   }
+  .switch-box .switch-button-background { float: left !important; }
+  .switch-box .switch-button-button { background-color: #FAFAFA !important; }
 
   /* rules for collapsing icon +/- and text */
   .collapse>th {
