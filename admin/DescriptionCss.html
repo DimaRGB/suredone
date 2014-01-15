@@ -61,6 +61,8 @@
 
   // init delete link and button
   function initDeleteItemsButtons() {
+    // append popup
+    $('body').append("<div id='deletePopup' class='reveal-modal'><h1 id='popupHeader'>Delete item? There is no undo.</h1><a href='#' class='close-reveal-modal button green'>Yes</a><a href='#' class='close-reveal-modal button red'>No</a></div><div class='reveal-modal-bg'></div>");
     // in List Page
     $('#elements-content')
       .find('>tbody').first()
@@ -75,11 +77,12 @@
     $('#sd-editor-single')
       .find('.field-submit')
       .append('<a class="delete-item-btn" href="' + getDeleteLink() + '">Delete</a>');
-
-    $('.delete-item-btn').click(function(e) {
-      if( !confirm('Delete item? There is no undo.') )
+    $('.delete-item-btn')
+      .attr('data-reveal-id', 'deletePopup')
+      .click(function(e) {
         e.preventDefault();
-    });
+        $('.green').get(0).href = this.href;
+      });
   }
 
   // get delete link in parameter or in location
@@ -124,13 +127,13 @@
 
   // init tooltips for inputs
   function initTooltip() {
-    $(':input').qtip({
+    $('*').qtip({
       position: {
         my: 'top center',
         at: 'bottom center',
       },
       style: {
-        classes: 'qtip-green qtip-shadow'
+        classes: 'qtip-light qtip-shadow'
       }
     });
   }
@@ -225,7 +228,7 @@
       .end()
       .find('select')
       .categoryToggle()
-      .on('change', categoryChange);
+      .change(categoryChange);
   }
 
   // categories change selection handler
@@ -238,15 +241,16 @@
 
   // categories toggling handler
   $.fn.categoryToggle = function() {
-    this.each(function() {
+    return this.each(function() {
       var enabled = $(this).is(':enabled') && $(this).find('option').length > 1;
       $(this)
         .closest('.category')
         .toggle(enabled);
     });
-    return this;
   }
 
+  // deletePopup plugin
+  !function(i){i("a[data-reveal-id]").live("click",function(e){e.preventDefault();var n=i(this).attr("data-reveal-id");i("#"+n).reveal(i(this).data())}),i.fn.reveal=function(e){var n={animation:"fadeAndPop",animationspeed:300,closeonbackgroundclick:!0,dismissmodalclass:"close-reveal-modal"},e=i.extend({},n,e);return this.each(function(){function n(){d=!1}function a(){d=!0}var t=i(this),o=parseInt(t.css("top")),s=t.height()+o,d=!1,c=i(".reveal-modal-bg");0==c.length&&(c=i('<div class="reveal-modal-bg" />').insertAfter(t)),t.bind("reveal:open",function(){c.unbind("click.modalEvent"),i("."+e.dismissmodalclass).unbind("click.modalEvent"),d||(a(),"fadeAndPop"==e.animation&&(t.css({top:i(window).height()-s,opacity:0,visibility:"visible"}),c.fadeIn(e.animationspeed/2),t.delay(e.animationspeed/2).animate({top:i(window).height()+o+"px",opacity:1},e.animationspeed,n())),"fade"==e.animation&&(t.css({opacity:0,visibility:"visible",top:i(window).height()+o}),c.fadeIn(e.animationspeed/2),t.delay(e.animationspeed/2).animate({opacity:1},e.animationspeed,n())),"none"==e.animation&&(t.css({visibility:"visible",top:i(window).height()+o}),c.css({display:"block"}),n())),t.unbind("reveal:open")}),t.bind("reveal:close",function(){d||(a(),"fadeAndPop"==e.animation&&(c.delay(e.animationspeed).fadeOut(e.animationspeed),t.animate({top:i(window).height()-s+"px",opacity:0},e.animationspeed/2,function(){t.css({top:o,opacity:1,visibility:"hidden"}),n()})),"fade"==e.animation&&(c.delay(e.animationspeed).fadeOut(e.animationspeed),t.animate({opacity:0},e.animationspeed,function(){t.css({opacity:1,visibility:"hidden",top:o}),n()})),"none"==e.animation&&(t.css({visibility:"hidden",top:o}),c.css({display:"none"}))),t.unbind("reveal:close")}),t.trigger("reveal:open");i("."+e.dismissmodalclass).bind("click.modalEvent",function(){t.trigger("reveal:close")});e.closeonbackgroundclick&&(c.css({cursor:"pointer"}),c.bind("click.modalEvent",function(){t.trigger("reveal:close")})),i("body").keyup(function(i){27===i.which&&t.trigger("reveal:close")})})}}(jQuery);
 </script>
 
 <style>
@@ -329,4 +333,7 @@
     width: 428px !important;
     background-image: url('https://cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/images/spritemap.png') !important;
   }
+
+  /* rules for deletePopup */
+  #popupHeader{width:100%;height:44px;background-image:-webkit-linear-gradient(top,#f9f9f9,#e9e9e9);background-image:-moz-linear-gradient(top,#f9f9f9,#e9e9e9);background-image:-o-linear-gradient(top,#f9f9f9,#e9e9e9);background-image:-ms-linear-gradient(top,#f9f9f9,#e9e9e9);background-image:linear-gradient(top,#f9f9f9,#e9e9e9);filter:progid:DXImageTransform.Microsoft.gradient(GradientType=0, StartColorStr='#f9f9f9', EndColorStr='#e9e9e9');border-bottom:1px solid #bababa;-webkit-box-shadow:inset 0 -1px 0 #fff,0 1px 3px rgba(0,0,0,.08);-moz-box-shadow:inset 0 -1px 0 #fff,0 1px 3px rgba(0,0,0,.08);box-shadow:inset 0 -1px 0 #fff,0 1px 3px rgba(0,0,0,.08);-webkit-border-radius:4px 4px 0 0;-moz-border-radius:4px 4px 0 0;border-radius:4px 4px 0 0;font-size:14px;font-weight:700;text-align:center;line-height:44px;color:#444;text-shadow:0 1px 0 #fff;margin-bottom:30px}.button{text-align:center;width:138px;height:33px;font-size:13px;font-weight:700;line-height:33px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.2);-webkit-border-radius:3px;-moz-border-radius:3px;border-radius:3px;-webkit-box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1px 2px rgba(0,0,0,.3);-moz-box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1px 2px rgba(0,0,0,.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 1px 2px rgba(0,0,0,.3);float:left}.button.green{background:-webkit-linear-gradient(top,rgba(170,212,79,1) 0,rgba(116,185,49,1) 90%,rgba(106,173,45,1) 95%,rgba(96,157,41,1) 100%);background:-moz-linear-gradient(top,rgba(170,212,79,1) 0,rgba(116,185,49,1) 90%,rgba(106,173,45,1) 95%,rgba(96,157,41,1) 100%);background:-o-linear-gradient(top,rgba(170,212,79,1) 0,rgba(116,185,49,1) 90%,rgba(106,173,45,1) 95%,rgba(96,157,41,1) 100%);background:-ms-linear-gradient(top,rgba(170,212,79,1) 0,rgba(116,185,49,1) 90%,rgba(106,173,45,1) 95%,rgba(96,157,41,1) 100%);background:linear-gradient(top,rgba(170,212,79,1) 0,rgba(116,185,49,1) 90%,rgba(106,173,45,1) 95%,rgba(96,157,41,1) 100%);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#aad44f', endColorstr='#609d29', GradientType=0);border:1px solid #5b8821;margin-left:100px}.button.red{background:-webkit-linear-gradient(top,rgba(248,114,136,1) 0,rgba(243,71,85,1) 90%,rgba(225,65,77,1) 95%,rgba(206,59,70,1) 100%);background:-moz-linear-gradient(top,rgba(248,114,136,1) 0,rgba(243,71,85,1) 90%,rgba(225,65,77,1) 95%,rgba(206,59,70,1) 100%);background:-o-linear-gradient(top,rgba(248,114,136,1) 0,rgba(243,71,85,1) 90%,rgba(225,65,77,1) 95%,rgba(206,59,70,1) 100%);background:-ms-linear-gradient(top,rgba(248,114,136,1) 0,rgba(243,71,85,1) 90%,rgba(225,65,77,1) 95%,rgba(206,59,70,1) 100%);background:linear-gradient(top,rgba(248,114,136,1) 0,rgba(243,71,85,1) 90%,rgba(225,65,77,1) 95%,rgba(206,59,70,1) 100%);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#f87288', endColorstr='#ce3b46', GradientType=0);border:1px solid #b0333e;float:right;margin-right:100px}.reveal-modal-bg{position:fixed;height:100%;width:100%;background:#000;background:rgba(0,0,0,.8);z-index:100;display:none;top:0;left:0}.reveal-modal{visibility:hidden;top:100px;left:50%;margin-left:-300px;width:520px;background:#eee url('http://assets.suredone.com/1737/media/modal-gloss.png') no-repeat -200px -80px;position:fixed;z-index:101;padding:30px 40px 34px;-moz-border-radius:5px;-webkit-border-radius:5px;border-radius:5px;-moz-box-shadow:0 0 10px rgba(0,0,0,.4);-webkit-box-shadow:0 0 10px rgba(0,0,0,.4);-box-shadow:0 0 10px rgba(0,0,0,.4)}.reveal-modal.small{width:200px;margin-left:-140px}.reveal-modal.medium{width:400px;margin-left:-240px}.reveal-modal.large{width:600px;margin-left:-340px}.reveal-modal.xlarge{width:800px;margin-left:-440px}
 </style>
