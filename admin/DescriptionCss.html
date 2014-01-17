@@ -25,42 +25,83 @@
     initDeleteItemsButtons();
     initTinymceToggle();
     initImage();
-    initSortableImages();
   }
 
   // init images in edit
   function initImage() {
-    var $images = $('#sd-editor-single #sd-media')
+    $('#sd-editor-single #sd-media')
       .wrapInner('<div />')
-      .find('>div');
-    $images
       .find('>div')
-      .addClass('image-box')
-      .find('.field-input [type=file]')
-      .before('<div class="btn btn-upload">UPLOAD IMAGE</div>');
-    $('.btn-upload').click(function() {
-      $(this)
-        .siblings('[type=file]')
-        .click();
-    });
-    $images
       .append("<input type='button' class='btn btn-reset-img' value='Reset images'></div>")
       .find('.btn-reset-img')
-      .click(resetImagesClick);
+      .click(resetImagesClick)
+      .end()
+      .find('>div')
+      .slice(0, 10)
+      .wrapAll('<div />')
+      .parent()
+      .sortable({
+        tolerance: 'pointer',
+        placeholder: 'image-box state-highlight',
+      })
+      .disableSelection()
+      .find('>div')
+      .addClass('image-box')
+      .buttonUpload()
+      .find('[type=text]')
+      .on('change', function() {
+        console.log(this);
+      });
+  }
+
+  // init button upload for input type file for image
+  jQuery.fn.buttonUpload = function() {
+    return this
+      .find('[type=file]')
+      .each(function() {
+        if( $(this).siblings('.btn-upload').length )
+          return;
+        $(this)
+          .before('<div class="btn btn-upload">UPLOAD IMAGE</div>')
+          .siblings('.btn-upload')
+          .click(function() {
+            $(this)
+              .siblings('[type=file]')
+              .click();
+          });
+      })
+      .change(function() {
+        if( !this.files || !this.files[0] )
+          return;
+        var $image = $(this)
+          .parent()
+          .prepend('<img />')
+          .find('img');
+        var reader = new FileReader();
+        reader.onload = function() {
+          $image
+            .attr('src', reader.result)
+            .siblings('.btn-upload, [type=file]')
+            .remove();
+        };
+        reader.readAsDataURL(this.files[0]);
+      })
+      .end();
   }
 
   // reset images click handler
   function resetImagesClick() {
-    // reset old images
     $(this)
       .closest('#sd-media')
-      .find('>div:not(.dropzone-box)')
+      .find('.image-box')
       .find('.field-input>span')
       .each(function() {
-        if( $(this).find('>a').remove().length ) {
-          var number = $(this).attr('id').replace('sd-media', '');
-          $(this).prepend('<input type="file" name="sd_media' + number + '">');
-        }
+        if( !$(this).find('>a, >img').remove().length )
+          return;
+        var name = $(this).attr('id').replace('-', '_');
+        $(this)
+          .prepend('<input type="file" name="' + name + '">')
+          .buttonUpload();
       });
   }
 
@@ -92,12 +133,6 @@
       $textArea.val(tinymceEditor.getContent());
     $tinymceContainer.slideToggle(250);
     $textArea.slideToggle(250);
-  }
-
-  //init sortable images
-  function initSortableImages() {
-    $( "#sd-media>div" ).sortable();
-    $( "#sd-media>div" ).disableSelection();
   }
 
   // init delete link and button
@@ -264,24 +299,38 @@
 <style>
   /* rules for image-box for images in editor */
   .image-box {
-    float: left !important;
-    width: 20% !important;
-    height: 250px !important;
-    padding: 16px !important;
     box-sizing: border-box !important;
+    padding: 16px !important;
+    border: 1px solid #bbb;
+    width: 210px !important;
+    height: 250px !important;
+    float: left !important;
     text-align: center !important;
+    background-color: #eee !important;
+    cursor: move;
   }
   .image-box > span:first-child {
     padding: 0 !important;
     float: none !important;
   }
-  .image-box .field-input { width: 100% !important; }
+  .image-box .field-input {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .image-box .field-input>span {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    position: relative !important;
+  }
   .image-box .field-input img {
     max-width: 100% !important;
     max-height: 150px !important;
   }
   .image-box .field-input .field-option {
-    margin-left: 48px !important;
+    position: absolute !important;
+    left: 48px !important;
+    bottom: 16px !important;
     text-align: left !important;
   }
   .image-box .field-input [type=file] { display: none !important; }
@@ -293,6 +342,8 @@
     background-color: #555 !important;
     font-size: 13px !important;
   }
+  .image-box .field-input [type=text] { width: 164px !important; }
+  .image-box.state-highlight { background-color: #fcefa1 !important; }
 
   /* rules for switch-box */
   .switch-box { margin: 8px 0; }
@@ -365,7 +416,8 @@
 
   /* rules for reset images button */
   .btn-reset-img {
-    margin-top: 8px;
+    margin-left: 200px;
+    margin-top: 20px;
   }
 
   /* rules for deletePopup */
