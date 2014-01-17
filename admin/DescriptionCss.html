@@ -4,13 +4,11 @@
 <link href='https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.css' rel='stylesheet' />
 <script src='https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.2.0/jquery.qtip.min.js'></script>
 
-<!-- dropzone -->
-<link href='https://cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/css/dropzone.min.css' rel='stylesheet' />
-<script src='https://cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/dropzone.min.js'></script>
-
 <!-- switchButton -->
 <link href='https://cdn.jsdelivr.net/jquery.switchbutton/1.0/jquery.switchButton.css' rel='stylesheet' />
 <script src='https://cdn.jsdelivr.net/jquery.switchbutton/1.0/jquery.switchButton.js'></script>
+
+<link rel="stylesheet" type="text/css" href="">
 
 <script>
   // bind document ready and ajax ready events with ready handler
@@ -24,9 +22,37 @@
     initCategories();
     initResetDefaultButton();
     initTooltip();
-    initImage();
     initDeleteItemsButtons();
     initTinymceToggle();
+    initImage();
+  }
+
+  // init images in edit
+  function initImage() {
+    $('#sd-editor-single')
+      .find('#sd-media')
+      .find('>div')
+      .addClass('image-box')
+      .end()
+      .append("<input type='button' class='btn btn-reset-img' value='Reset images'></div>")
+      .find('.btn-reset-img')
+      .click(resetImagesClick);
+    Dropzone.discover();
+  }
+
+  // reset images click handler
+  function resetImagesClick() {
+    // reset old images
+    $(this)
+      .closest('#sd-media')
+      .find('>div:not(.dropzone-box)')
+      .find('.field-input>span')
+      .each(function() {
+        if( $(this).find('>a').remove().length ) {
+          var number = $(this).attr('id').replace('sd-media', '');
+          $(this).prepend('<input type="file" name="sd_media' + number + '">');
+        }
+      });
   }
 
   // init tinymce toggling
@@ -90,39 +116,6 @@
     if( !editLink )
       editLink = location.href;
     return editLink.replace('do=edit', 'do=delete');
-  }
-
-  // init dropzone plugin for images
-  function initImage() {
-    $('#sd-editor-single')
-      .find('#sd-media')
-      .find('>div')
-      .hide()
-      .end()
-      .append("<div class='dropzone-box'><form action='#' class='dropzone'><div class='fallback'><input type='file' multiply /></div></form><input type='button' class='btn btn-reset-img' value='Reset images'></div>")
-      .find('.btn-reset-img')
-      .click(resetImagesClick);
-    Dropzone.discover();
-  }
-
-  // reset images click handler
-  function resetImagesClick() {
-    // reset new images
-    $(this)
-      .siblings('.dropzone')
-      .find('.dz-preview')
-      .remove();
-    // reset old images
-    $(this)
-      .closest('#sd-media')
-      .find('>div:not(.dropzone-box)')
-      .find('.field-input>span')
-      .each(function() {
-        if( $(this).find('>a').remove().length ) {
-          var number = $(this).attr('id').replace('sd-media', '');
-          $(this).prepend('<input type="file" name="sd_media' + number + '">');
-        }
-      });
   }
 
   // init tooltips for inputs
@@ -254,6 +247,18 @@
 </script>
 
 <style>
+  /* rules for image-box for images in editor */
+  .image-box {
+    float: left !important;
+    width: 20% !important;
+    height: 194px !important;
+    padding: 16px !important;
+    box-sizing: border-box !important;
+  }
+  .image-box > span:first-child {
+    float: none !important;
+  }
+
   /* rules for switch-box */
   .switch-box { margin: 8px 0; }
   .switch-box [type=checkbox]+.switch-button-label+.switch-button-background {
@@ -326,12 +331,6 @@
   /* rules for reset images button */
   .btn-reset-img {
     margin-top: 8px;
-  }
-
-  /* rules for fixing dropzone default image */
-  .dropzone .dz-default {
-    width: 428px !important;
-    background-image: url('https://cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/images/spritemap.png') !important;
   }
 
   /* rules for deletePopup */
