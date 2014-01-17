@@ -29,7 +29,9 @@
 
   // init images in edit
   function initImage() {
-    var $images = $('#sd-editor-single #sd-media');
+    var $images = $('#sd-editor-single #sd-media')
+      .wrapInner('<div />')
+      .find('>div');
     $images
       .find('>div')
       .addClass('image-box')
@@ -257,7 +259,7 @@
   .image-box {
     float: left !important;
     width: 20% !important;
-    height: 280px !important;
+    height: 250px !important;
     padding: 16px !important;
     box-sizing: border-box !important;
     text-align: center !important;
@@ -269,7 +271,7 @@
   .image-box .field-input { width: 100% !important; }
   .image-box .field-input img {
     max-width: 100% !important;
-    max-height: 170px !important;
+    max-height: 150px !important;
   }
   .image-box .field-input .field-option {
     margin-left: 48px !important;
