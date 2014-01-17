@@ -29,15 +29,21 @@
 
   // init images in edit
   function initImage() {
-    $('#sd-editor-single')
-      .find('#sd-media')
+    var $images = $('#sd-editor-single #sd-media');
+    $images
       .find('>div')
       .addClass('image-box')
-      .end()
+      .find('.field-input [type=file]')
+      .before('<div class="btn btn-upload">UPLOAD IMAGE</div>');
+    $('.btn-upload').click(function() {
+      $(this)
+        .siblings('[type=file]')
+        .click();
+    });
+    $images
       .append("<input type='button' class='btn btn-reset-img' value='Reset images'></div>")
       .find('.btn-reset-img')
       .click(resetImagesClick);
-    Dropzone.discover();
   }
 
   // reset images click handler
@@ -251,12 +257,31 @@
   .image-box {
     float: left !important;
     width: 20% !important;
-    height: 194px !important;
+    height: 200px !important;
     padding: 16px !important;
     box-sizing: border-box !important;
+    text-align: center;
   }
   .image-box > span:first-child {
     float: none !important;
+  }
+  .image-box .field-input { width: 100% !important; }
+  .image-box .field-input img {
+    max-width: 100%;
+    max-height: 100px;
+  }
+  .image-box .field-input .field-option {
+    margin-left: 48px !important;
+    text-align: left !important;
+  }
+  .image-box .field-input [type=file] { display: none !important; }
+  .image-box .field-input .btn-upload {
+    display: inline-block !important;
+    margin: 30px 0 !important;
+    padding: 3px 6px !important;
+    color: #ccc !important;
+    background-color: #555 !important;
+    font-size: 13px !important;
   }
 
   /* rules for switch-box */
