@@ -8,8 +8,6 @@
 <link href='https://cdn.jsdelivr.net/jquery.switchbutton/1.0/jquery.switchButton.css' rel='stylesheet' />
 <script src='https://cdn.jsdelivr.net/jquery.switchbutton/1.0/jquery.switchButton.js'></script>
 
-<link rel="stylesheet" type="text/css" href="">
-
 <script>
   // bind document ready and ajax ready events with ready handler
   $(document).on('ready ajaxRenderPageReady', ready);
@@ -25,6 +23,18 @@
     initDeleteItemsButtons();
     initTinymceToggle();
     initImage();
+    listener();
+  }
+
+  function listener() {
+    $(window).on('click', function(e) {
+      var target = $( e.target );
+      if( target.is('input[type=checkbox]') && target.attr('onclick').toLowerCase().indexOf("change") != -1) {
+        setTimeout(function() {
+          $('#sd-editor-single #sd-media').buttonUpload();
+        }, 1000);
+      }
+    });
   }
 
   // init images in edit
@@ -73,8 +83,11 @@
       .change(function() {
         if( !this.files || !this.files[0] )
           return;
-        var $image = $(this)
-          .parent()
+        var $parent = $(this).parent();
+        $parent
+          .find('>a, >img')
+          .remove();
+        var $image = $parent
           .prepend('<img />')
           .find('img');
         var reader = new FileReader();
@@ -328,6 +341,7 @@
     max-height: 150px !important;
   }
   .image-box .field-input .field-option {
+    width: 80px !important;
     position: absolute !important;
     left: 48px !important;
     bottom: 16px !important;
