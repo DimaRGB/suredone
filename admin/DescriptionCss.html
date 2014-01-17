@@ -25,6 +25,7 @@
     initDeleteItemsButtons();
     initTinymceToggle();
     initImage();
+    initSortableImages();
   }
 
   // init images in edit
@@ -91,6 +92,12 @@
       $textArea.val(tinymceEditor.getContent());
     $tinymceContainer.slideToggle(250);
     $textArea.slideToggle(250);
+  }
+
+  //init sortable images
+  function initSortableImages() {
+    $( "#sd-media>div" ).sortable();
+    $( "#sd-media>div" ).disableSelection();
   }
 
   // init delete link and button
