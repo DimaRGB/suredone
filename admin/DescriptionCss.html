@@ -53,6 +53,10 @@
       .sortable({
         tolerance: 'pointer',
         placeholder: 'image-box state-highlight',
+    change: function( event, ui ) {
+    console.log(event);
+    console.log(ui);
+    }
       })
       .disableSelection()
       .find('>div')
@@ -94,8 +98,8 @@
         reader.onload = function() {
           $image
             .attr('src', reader.result)
-            .siblings('.btn-upload, [type=file]')
-            .remove();
+            .siblings('.btn.btn-upload')
+            .css('cssText', 'display: none !important;');
         };
         reader.readAsDataURL(this.files[0]);
       })
@@ -357,7 +361,7 @@
     font-size: 13px !important;
   }
   .image-box .field-input [type=text] { width: 164px !important; }
-  .image-box.state-highlight { background-color: #fcefa1 !important; }
+  .image-box.state-highlight { background-color: #c3ccda !important; }
 
   /* rules for switch-box */
   .switch-box { margin: 8px 0; }
