@@ -15,28 +15,27 @@
 
 		function load($filename, $options = 0) {
 			parent::load($filename, $options);
-			$this->books = $this->getElementsByTagName('books')->item(0);
 		}
 
-		function addBook($title, $author) {
-			$id = $this->books->childNodes->length + 1;
-			$book = $this->createElement('book');
-			$book->appendChild($this->createElement('id', $id));
-			$book->appendChild($this->createElement('title', $title));
-			$book->appendChild($this->createElement('author', $author));
-			$this->books->appendChild($book);
-		}
+		// function addBook($title, $author) {
+		// 	$id = $this->books->childNodes->length + 1;
+		// 	$book = $this->createElement('book');
+		// 	$book->appendChild($this->createElement('id', $id));
+		// 	$book->appendChild($this->createElement('title', $title));
+		// 	$book->appendChild($this->createElement('author', $author));
+		// 	$this->books->appendChild($book);
+		// }
 
-		function removeBook() {
-			if( $this->books->childNodes->length )
-				$this->books->removeChild($this->books->firstChild);
-		}
+		// function removeBook() {
+		// 	if( $this->books->childNodes->length )
+		// 		$this->books->removeChild($this->books->firstChild);
+		// }
 
-		function replaceBook($i1, $i2) {
-			$book1 = $this->books->childNodes->item($i1);
-			$book2 = $this->books->childNodes->item($i2);
-			$this->books->replaceChild($book1, $book2);
-		}
+		// function replaceBook($i1, $i2) {
+		// 	$book1 = $this->books->childNodes->item($i1);
+		// 	$book2 = $this->books->childNodes->item($i2);
+		// 	$this->books->replaceChild($book1, $book2);
+		// }
 
 		function saveAndEcho($isXML, $node = NULL) {
 			if( $isXML ) {
@@ -49,21 +48,19 @@
 				echo $this->saveXML($node);
 			} else
 				echo '<hr><xmp>' . $this->saveXML($node) . '</xmp>';
-			$this->save('books.xml');
 		}
 
 	}
 
 	$xml = new ShipWorksXML;
-	$xml->load('books.xml');
-	// $xml->load('shipworks.xsd');
+	$xml->load('shipworks.xml');
 
-	$action = $_REQUEST['action'];
-	if( $action == 'add' )
-		$xml->addBook('PHP Framework', 'Reza Christian');
-	elseif( $action == 'remove' )
-		$xml->removeBook();
-	elseif( $action == 'replace' )
-		$xml->replaceBook($_REQUEST['i1'], $_REQUEST['i2']);
+	// $action = $_REQUEST['action'];
+	// if( $action == 'add' )
+	// 	$xml->addBook('PHP Framework', 'Reza Christian');
+	// elseif( $action == 'remove' )
+	// 	$xml->removeBook();
+	// elseif( $action == 'replace' )
+	// 	$xml->replaceBook($_REQUEST['i1'], $_REQUEST['i2']);
 
 	$xml->saveAndEcho(true);
