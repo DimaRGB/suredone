@@ -19,22 +19,86 @@
 
 	class ShipWorksXML extends DOMDocument {
 
-		private $moduleVersion = '3.0.0';
+		private $moduleVersion = '3.0.1';
 		private $schemaVersion = '1.0.0';
 
-		public function __construct() {
+		public function __construct($action, $data) {
 			parent::__construct('1.0', 'utf-8');
 			$this->xmlStandalone = true;
 			$this->formatOutput = true;
 			$this->preserveWhiteSpace = true;
 			$this->initRoot();
+
+			$this->action = $action;
+			$this->data = $data;
+			$this->initBody();
 		}
 
 		private function initRoot() {
-			$root = $this->createElement('ShipWorks');
-			$root->setAttribute('moduleVersion', $this->moduleVersion);
-			$root->setAttribute('schemaVersion', $this->schemaVersion);
-			$this->appendChild($root);
+			$this->root = $this->createElement('ShipWorks');
+			$this->root->setAttribute('moduleVersion', $this->moduleVersion);
+			$this->root->setAttribute('schemaVersion', $this->schemaVersion);
+			$this->appendChild($this->root);
+		}
+
+		private function initBody() {
+			switch( $this->action ) {
+				case 'getmodule':
+					$body = $this->getModule();
+					break;
+				case 'getstore':
+					$body = $this->getStore();
+					break;
+				case 'getstatuscodes':
+					$body = $this->getStatusCodes();
+					break;
+				case 'getcount':
+					$body = $this->getCount();
+					break;
+				case 'getorders':
+					$body = $this->getOrders();
+					break;
+				case 'updatestatus':
+				case 'updateshipment':
+					$body = $this->getUpdate();
+					break;
+			}
+			if( isset($body) )
+				$this->root->appendChild($body);
+		}
+
+		public function getModule() {
+			$module = $this->createElement('Module');
+			$platform = $this->createElement('Platform', 'Suredone');
+			$developer = $this->createElement('Developer', 'dima.rgb (dima.rgb@gmail.com)');
+			$capabilities = $this->createElement('Capabilities');
+			$downloadStrategy = $this->createElement('DownloadStrategy', 'ByModifiedTime');
+			$onlineCustomerID = $this->createElement('OnlineCustomerID');
+			$onlineCustomerID->setAttribute('supported', 'true');
+			$onlineCustomerID->setAttribute('dataType', 'numeric');
+			$onlineStatus = $this->createElement('OnlineStatus');
+			$onlineStatus->setAttribute('supported', 'true');
+			$onlineStatus->setAttribute('dataType', 'numeric');
+			$onlineStatus->setAttribute('supportsComments', 'true');
+			$onlineShipmentUpdate = $this->createElement('OnlineShipmentUpdate');
+			$onlineShipmentUpdate->setAttribute('supported', 'true');
+			$capabilities->appendChild($downloadStrategy);
+			$capabilities->appendChild($onlineCustomerID);
+			$capabilities->appendChild($onlineStatus);
+			$capabilities->appendChild($onlineShipmentUpdate);
+			$module->appendChild($platform);
+			$module->appendChild($developer);
+			$module->appendChild($capabilities);
+			return $module;
+		}
+
+		public function getStore() {
+			$store = $this->createElement('Store');
+			foreach( $this->data as $name => $value ) {
+				$Name = ucfirst($name);
+				$store->appendChild($this->createElement($Name, $value));
+			}
+			return $store;
 		}
 
 		public function echoXML($isXML) {
@@ -62,5 +126,20 @@
 
 	}
 
-	$xml = new ShipWorksXML;
+	$action = 'getstore';
+	$data = array(
+		'name' => 'stan', // site_user
+		'companyOrOwner' => 'smetner', // business_name
+		'email' => 'stan@smetner.com', // business_email
+		'street1' => '', // business_street
+		'street2' => '', // business_street_2
+		'city' => 'New York', // business_city
+		'state' => 'NY', // business_state
+		'postalCode' => '10001', // business_zip
+		'country' => 'US', // business_country
+		'phone' => '', // business_phone
+		'website' => 'stan.suredone.com', // site_domain
+	);
+
+	$xml = new ShipWorksXML($action, $data);
 	$xml->echoXML(true);
