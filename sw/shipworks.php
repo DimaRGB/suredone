@@ -126,20 +126,40 @@
 
 	}
 
-	$action = 'getstore';
-	$data = array(
-		'name' => 'stan', // site_user
-		'companyOrOwner' => 'smetner', // business_name
-		'email' => 'stan@smetner.com', // business_email
-		'street1' => '', // business_street
-		'street2' => '', // business_street_2
-		'city' => 'New York', // business_city
-		'state' => 'NY', // business_state
-		'postalCode' => '10001', // business_zip
-		'country' => 'US', // business_country
-		'phone' => '', // business_phone
-		'website' => 'stan.suredone.com', // site_domain
-	);
+	// $action = 'getstore';
+	// $data = array(
+	// 	'name' => 'stan', // site_user
+	// 	'companyOrOwner' => 'smetner', // business_name
+	// 	'email' => 'stan@smetner.com', // business_email
+	// 	'street1' => '', // business_street
+	// 	'street2' => '', // business_street_2
+	// 	'city' => 'New York', // business_city
+	// 	'state' => 'NY', // business_state
+	// 	'postalCode' => '10001', // business_zip
+	// 	'country' => 'US', // business_country
+	// 	'phone' => '', // business_phone
+	// 	'website' => 'stan.suredone.com', // site_domain
+	// );
 
-	$xml = new ShipWorksXML($action, $data);
-	$xml->echoXML(true);
+	// $xml = new ShipWorksXML($action, $data);
+	// $xml->echoXML(true);
+
+	$r = new HttpRequest('https://api.suredone.com/v1/options/all', HttpRequest::METH_POST);
+	$r->addHeaders(array(
+		'Content-Type' => 'multipart/form-data',
+		'X-Auth-User' => 'smetner',
+		'X-Auth-Token' => '48533192907E87B3754470CE8DF8C773920C0869D6D1BD2A70F159DB81D56F46295EF0585F6163D36VPELH82AJEYGWHYNSJR2XR6PYLEWFBE32IGI50LK4DZZO0USM08TO0LXQE943RO5BIKDWAZ4VO9WYM4MFWHSCEZVCA68VZ0',
+	));
+	// $r->addQueryData(array(
+	// 	'getTest' => '1'
+	// )); // GET fields
+	$r->addPostFields(array(
+		'postTest' => '2'
+	)); // POST fields
+	try {
+	    echo $r->send()->getBody();
+	    if( $r->getResponseCode() == 200 )
+	    	echo 'success';
+	} catch (HttpException $ex) {
+	    echo $ex;
+	}
