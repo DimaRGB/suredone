@@ -144,22 +144,49 @@
 	// $xml = new ShipWorksXML($action, $data);
 	// $xml->echoXML(true);
 
-	$r = new HttpRequest('https://api.suredone.com/v1/options/all', HttpRequest::METH_POST);
-	$r->addHeaders(array(
-		'Content-Type' => 'multipart/form-data',
-		'X-Auth-User' => 'smetner',
-		'X-Auth-Token' => '48533192907E87B3754470CE8DF8C773920C0869D6D1BD2A70F159DB81D56F46295EF0585F6163D36VPELH82AJEYGWHYNSJR2XR6PYLEWFBE32IGI50LK4DZZO0USM08TO0LXQE943RO5BIKDWAZ4VO9WYM4MFWHSCEZVCA68VZ0',
-	));
-	// $r->addQueryData(array(
-	// 	'getTest' => '1'
-	// )); // GET fields
-	$r->addPostFields(array(
-		'postTest' => '2'
-	)); // POST fields
+	function httpRequestSend($method = 'GET', $url, $headers = null, $data = null) {
+		$http = array(
+			'method' => $method,
+			'ignore_errors' => true,
+			'header' => $headers,
+		);
+		if( $data !== null ) {
+			$data = http_build_query($data);
+			if( $method == 'GET' )
+				$url .= '?'. $data;
+			else
+				$http['content'] = $data;
+		}
+		$context = stream_context_create(array('http' => $http));
+		$stream = fopen($url, 'rb', false, $context);
+		$response = $stream ? stream_get_contents($stream) : false;
+		if( $response === false )
+			throw new Exception("Failed $method $url: $php_errormsg");
+		$response = json_decode($response);
+		if( $response === null )
+			throw new Exception("Failed to decode $response as json");
+		return $response;
+	}
+
+	// $request = new HttpRequest('https://api.suredone.com/v1/options/all', HttpRequest::METH_POST);
+	// $request->addHeaders(array(
+	// 	'Content-Type' => 'multipart/form-data',
+	// 	'X-Auth-User' => 'smetner',
+	// 	'X-Auth-Token' => '48533192907E87B3754470CE8DF8C773920C0869D6D1BD2A70F159DB81D56F46295EF0585F6163D36VPELH82AJEYGWHYNSJR2XR6PYLEWFBE32IGI50LK4DZZO0USM08TO0LXQE943RO5BIKDWAZ4VO9WYM4MFWHSCEZVCA68VZ0',
+	// ));
+
 	try {
-	    echo $r->send()->getBody();
-	    if( $r->getResponseCode() == 200 )
-	    	echo 'success';
-	} catch (HttpException $ex) {
-	    echo $ex;
+		$authResponse = httpRequestSend('POST', 'https://api.suredone.com/v1/auth', array(
+				'Content-Type' => 'multipart/form-data',
+			), array(
+				'user' => $_REQUEST['username'],
+				'pass' => $_REQUEST['password'],
+			)
+		);
+		if( $authResponse->result == 'success' )
+			echo $authResponse->token;
+		else
+			throw new Exception($authResponse->message);
+	} catch( Exception $e ) {
+		echo 'Exception: '. $e->getMessage();
 	}
