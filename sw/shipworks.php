@@ -148,7 +148,7 @@ try {
 			$url = self::PATH . $url;
 			if( isset($this->token) )
 				$http['header'] = array(
-					'Content-Type: multipart/form-data',
+					// 'Content-Type: multipart/form-data',
 					'X-Auth-User: '. $this->username,
 					'X-Auth-Token: '. $this->token,
 				);
@@ -163,12 +163,13 @@ try {
 			$stream = fopen($url, 'rb', false, $context);
 			$response = $stream ? stream_get_contents($stream) : false;
 			if( $response === false )
-				throw new Exception("Failed $method $url: $php_errormsg");
+				throw new Exception("Failed $method $url: $php_errormsg", 502);
 			$response = json_decode($response, true);
 			if( $response === null )
-				throw new Exception("Failed to decode $response as json");
-			if( $response->result == 'error' || $response->result == 'failure' )
-				throw new Exception($response->message);
+				throw new Exception("Failed to decode $response as json", 503);
+			if( $response['result'] == 'error' || $response['result'] == 'failure' ) {
+				throw new Exception($response['message'], 504);
+			}
 			return $response;
 		}
 
@@ -214,11 +215,11 @@ try {
 		}
 
 		public function updateStatus($order, $status, $comments) {
-			
+
 		}
 
 		public function updateShipment($order, $tracking) {
-			$this->sendHttpRequest('POST', 'orders/edit', array(
+			$res = $this->sendHttpRequest('POST', 'orders/edit', array(
 				'order' => $order,
 				'shiptracking' => $tracking,
 			));
@@ -256,14 +257,12 @@ try {
 			$shipWorksXML->appendUpdateSuccess();
 			break;
 		default:
-			throw new Exception('Invalid action');
+			throw new Exception('Invalid action', 501);
 	}
 
 	$shipWorksXML->echoXML();
 
 } catch( Exception $e ) {
-	$shipWorksXML->appendError(500, $e->getMessage());
+	$shipWorksXML->appendError($e->getCode(), $e->getMessage());
 	$shipWorksXML->echoXML();
-	if( DEV_MODE )
-		echo 'Exception: '. $e->getMessage();
 }
