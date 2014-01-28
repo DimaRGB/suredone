@@ -1,5 +1,7 @@
 <?php
 
+try {
+
 	// init cycle
 	// Call 1: GetModule (action=getmodule) 
 	// Call 2: GetStore
@@ -17,57 +19,28 @@
 		echo '</xmp>';
 	}
 
+	// class for generate xml response for shipworks
 	class ShipWorksXML extends DOMDocument {
 
 		private $moduleVersion = '3.0.1';
 		private $schemaVersion = '1.0.0';
 
-		public function __construct($action, $data) {
+		public function __construct() {
 			parent::__construct('1.0', 'utf-8');
 			$this->xmlStandalone = true;
 			$this->formatOutput = true;
 			$this->preserveWhiteSpace = true;
-			$this->initRoot();
-
-			$this->action = $action;
-			$this->data = $data;
-			$this->initBody();
+			$this->appendRoot();
 		}
 
-		private function initRoot() {
+		private function appendRoot() {
 			$this->root = $this->createElement('ShipWorks');
 			$this->root->setAttribute('moduleVersion', $this->moduleVersion);
 			$this->root->setAttribute('schemaVersion', $this->schemaVersion);
 			$this->appendChild($this->root);
 		}
 
-		private function initBody() {
-			switch( $this->action ) {
-				case 'getmodule':
-					$body = $this->getModule();
-					break;
-				case 'getstore':
-					$body = $this->getStore();
-					break;
-				case 'getstatuscodes':
-					$body = $this->getStatusCodes();
-					break;
-				case 'getcount':
-					$body = $this->getCount();
-					break;
-				case 'getorders':
-					$body = $this->getOrders();
-					break;
-				case 'updatestatus':
-				case 'updateshipment':
-					$body = $this->getUpdate();
-					break;
-			}
-			if( isset($body) )
-				$this->root->appendChild($body);
-		}
-
-		public function getModule() {
+		public function appendModule() {
 			$module = $this->createElement('Module');
 			$platform = $this->createElement('Platform', 'Suredone');
 			$developer = $this->createElement('Developer', 'dima.rgb (dima.rgb@gmail.com)');
@@ -89,16 +62,16 @@
 			$module->appendChild($platform);
 			$module->appendChild($developer);
 			$module->appendChild($capabilities);
-			return $module;
+			$this->root->appendChild($module);
 		}
 
-		public function getStore() {
+		public function appendStore($storeData) {
 			$store = $this->createElement('Store');
-			foreach( $this->data as $name => $value ) {
+			foreach( $storeData as $name => $value ) {
 				$Name = ucfirst($name);
 				$store->appendChild($this->createElement($Name, $value));
 			}
-			return $store;
+			$this->root->appendChild($store);
 		}
 
 		public function echoXML($isXML) {
@@ -126,67 +99,102 @@
 
 	}
 
-	// $action = 'getstore';
-	// $data = array(
-	// 	'name' => 'stan', // site_user
-	// 	'companyOrOwner' => 'smetner', // business_name
-	// 	'email' => 'stan@smetner.com', // business_email
-	// 	'street1' => '', // business_street
-	// 	'street2' => '', // business_street_2
-	// 	'city' => 'New York', // business_city
-	// 	'state' => 'NY', // business_state
-	// 	'postalCode' => '10001', // business_zip
-	// 	'country' => 'US', // business_country
-	// 	'phone' => '', // business_phone
-	// 	'website' => 'stan.suredone.com', // site_domain
-	// );
 
-	// $xml = new ShipWorksXML($action, $data);
-	// $xml->echoXML(true);
+	// class for fetching data in suredone api
+	class SuredoneApi {
 
-	function httpRequestSend($method = 'GET', $url, $headers = null, $data = null) {
-		$http = array(
-			'method' => $method,
-			'ignore_errors' => true,
-			'header' => $headers,
-		);
-		if( $data !== null ) {
-			$data = http_build_query($data);
-			if( $method == 'GET' )
-				$url .= '?'. $data;
-			else
-				$http['content'] = $data;
+		public function __construct($username, $password) {
+			$this->username = $username;
+			$this->password = $password;
+			$this->auth();
 		}
-		$context = stream_context_create(array('http' => $http));
-		$stream = fopen($url, 'rb', false, $context);
-		$response = $stream ? stream_get_contents($stream) : false;
-		if( $response === false )
-			throw new Exception("Failed $method $url: $php_errormsg");
-		$response = json_decode($response);
-		if( $response === null )
-			throw new Exception("Failed to decode $response as json");
-		return $response;
+
+		private function httpRequestSend($method, $url, $data = null) {
+			$http = array(
+				'method' => $method,
+				'ignore_errors' => true,
+			);
+			if( isset($this->token) )
+				$http['header'] = array(
+					'Content-Type: multipart/form-data',
+					'X-Auth-User: '. $this->username,
+					'X-Auth-Token: '. $this->token,
+				);
+			if( $data !== null ) {
+				$data = http_build_query($data);
+				if( $method == 'GET' )
+					$url .= '?'. $data;
+				else
+					$http['content'] = $data;
+			}
+			$context = stream_context_create(array('http' => $http));
+			$stream = fopen($url, 'rb', false, $context);
+			$response = $stream ? stream_get_contents($stream) : false;
+			if( $response === false )
+				throw new Exception("Failed $method $url: $php_errormsg");
+			$response = json_decode($response);
+			if( $response === null )
+				throw new Exception("Failed to decode $response as json");
+			if( $response->result == 'error' )
+				throw new Exception($response->message);
+			return $response;
+		}
+
+		private function auth() {
+			$this->token = $this->httpRequestSend('POST', 'https://api.suredone.com/v1/auth', array(
+				'user' => $this->username,
+				'pass' => $this->password,
+			))->token;
+		}
+
+		public function getStoreData() {
+			$options = $this->httpRequestSend('GET', 'https://api.suredone.com/v1/options/all');
+			return array(
+				'name' => $options->site_user,
+				'companyOrOwner' => $options->business_name,
+				'email' => $options->business_email,
+				'street1' => $options->business_street,
+				'street2' => $options->business_street_2,
+				'city' => $options->business_city,
+				'state' => $options->business_state,
+				'postalCode' => $options->business_zip,
+				'country' => $options->business_country,
+				'phone' => $options->business_phone,
+				'website' => $options->site_domain,
+			);
+		}
+
 	}
 
-	// $request = new HttpRequest('https://api.suredone.com/v1/options/all', HttpRequest::METH_POST);
-	// $request->addHeaders(array(
-	// 	'Content-Type' => 'multipart/form-data',
-	// 	'X-Auth-User' => 'smetner',
-	// 	'X-Auth-Token' => '48533192907E87B3754470CE8DF8C773920C0869D6D1BD2A70F159DB81D56F46295EF0585F6163D36VPELH82AJEYGWHYNSJR2XR6PYLEWFBE32IGI50LK4DZZO0USM08TO0LXQE943RO5BIKDWAZ4VO9WYM4MFWHSCEZVCA68VZ0',
-	// ));
 
-	try {
-		$authResponse = httpRequestSend('POST', 'https://api.suredone.com/v1/auth', array(
-				'Content-Type' => 'multipart/form-data',
-			), array(
-				'user' => $_REQUEST['username'],
-				'pass' => $_REQUEST['password'],
-			)
-		);
-		if( $authResponse->result == 'success' )
-			echo $authResponse->token;
-		else
-			throw new Exception($authResponse->message);
-	} catch( Exception $e ) {
-		echo 'Exception: '. $e->getMessage();
+	// main
+	$suredoneApi = new SuredoneApi($_REQUEST['username'], $_REQUEST['password']);
+	$shipWorksXML = new ShipWorksXML();
+
+	switch( $_REQUEST['action'] ) {
+		case 'getmodule':
+			$shipWorksXML->appendModule();
+			break;
+		case 'getstore':
+			$shipWorksXML->appendStore($suredoneApi->getStoreData());
+			break;
+		case 'getstatuscodes':
+			// $body = $this->getStatusCodes();
+			break;
+		case 'getcount':
+			// $body = $this->getCount();
+			break;
+		case 'getorders':
+			// $body = $this->getOrders();
+			break;
+		case 'updatestatus':
+		case 'updateshipment':
+			// $body = $this->getUpdate();
+			break;
 	}
+
+	$shipWorksXML->echoXML(true);
+	
+} catch( Exception $e ) {
+	echo 'Exception: '. $e->getMessage();
+}
