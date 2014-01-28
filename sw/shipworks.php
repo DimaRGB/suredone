@@ -132,17 +132,20 @@ try {
 	// class for fetching data in suredone api
 	class SuredoneApi {
 
+		const PATH = 'https://api.suredone.com/v1/';
+
 		public function __construct($username, $password) {
 			$this->username = $username;
 			$this->password = $password;
 			$this->auth();
 		}
 
-		private function httpRequestSend($method, $url, $data = null) {
+		private function sendHttpRequest($method, $url, $data = null) {
 			$http = array(
 				'method' => $method,
 				'ignore_errors' => true,
 			);
+			$url = self::PATH . $url;
 			if( isset($this->token) )
 				$http['header'] = array(
 					'Content-Type: multipart/form-data',
@@ -164,13 +167,13 @@ try {
 			$response = json_decode($response, true);
 			if( $response === null )
 				throw new Exception("Failed to decode $response as json");
-			if( $response->result == 'error' )
+			if( $response->result == 'error' || $response->result == 'failure' )
 				throw new Exception($response->message);
 			return $response;
 		}
 
 		private function auth() {
-			$auth = $this->httpRequestSend('POST', 'https://api.suredone.com/v1/auth', array(
+			$auth = $this->sendHttpRequest('POST', 'auth', array(
 				'user' => $this->username,
 				'pass' => $this->password,
 			));
@@ -178,7 +181,7 @@ try {
 		}
 
 		public function getStore() {
-			$options = $this->httpRequestSend('GET', 'https://api.suredone.com/v1/options/all');
+			$options = $this->sendHttpRequest('GET', 'options/all');
 			return array(
 				'name' => $options['site_user'],
 				'companyOrOwner' => $options['business_name'],
@@ -202,12 +205,23 @@ try {
 		}
 
 		public function getCount($start) {
-			$orders = $this->httpRequestSend('GET', 'https://api.suredone.com/v1/orders/all?sort=dateupdated');
+			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=dateupdated');
 			$count = $orders['all'];
 			for( $i = $count; $i >= 1 ; $i-- )
 				if( $start >= $orders[$i]['dateupdated'] )
 					break;
 			return $count - $i;
+		}
+
+		public function updateStatus($order, $status, $comments) {
+			
+		}
+
+		public function updateShipment($order, $tracking) {
+			$this->sendHttpRequest('POST', 'orders/edit', array(
+				'order' => $order,
+				'shiptracking' => $tracking,
+			));
 		}
 
 	}
@@ -234,8 +248,12 @@ try {
 			// $body = $this->getOrders();
 			break;
 		case 'updatestatus':
+			$suredoneApi->updateStatus($_REQUEST['order'], $_REQUEST['status'], $_REQUEST['comments']);
+			$shipWorksXML->appendUpdateSuccess();
+			break;
 		case 'updateshipment':
-			// $body = $this->getUpdate();
+			$suredoneApi->updateShipment($_REQUEST['order'], $_REQUEST['tracking']);
+			$shipWorksXML->appendUpdateSuccess();
 			break;
 		default:
 			throw new Exception('Invalid action');
@@ -244,7 +262,7 @@ try {
 	$shipWorksXML->echoXML();
 
 } catch( Exception $e ) {
-	$shipWorksXML->appendError();
+	$shipWorksXML->appendError(500, $e->getMessage());
 	$shipWorksXML->echoXML();
 	if( DEV_MODE )
 		echo 'Exception: '. $e->getMessage();
