@@ -13,6 +13,8 @@ try {
 	// Call 3: GetCount
 	// Call 4...N: GetOrders - виполняеться бесконечно пока не прийдет пустой ответ
 
+	define('DEV_MODE', true);
+
 	function echoObj($obj) {
 		echo '<hr><xmp>';
 		print_r($obj);
@@ -74,8 +76,36 @@ try {
 			$this->root->appendChild($store);
 		}
 
-		public function echoXML($isXML) {
-			if( $isXML ) {
+		public function appendStatusCodes($codes) {
+			$statusCodes = $this->createElement('StatusCodes');
+			foreach( $codes as $code => $name ) {
+				$statusCode = $this->createElement('StatusCode');
+				$statusCode->appendChild($this->createElement('Code', $code));
+				$statusCode->appendChild($this->createElement('Name', $name));
+				$statusCodes->appendChild($statusCode);
+			}
+			$this->root->appendChild($statusCodes);
+		}
+
+		public function appendOrderCount($count) {
+			$this->root->appendChild($this->createElement('OrderCount', $count));
+		}
+
+		public function appendUpdateSuccess() {
+			$this->root->appendChild($this->createElement('UpdateSuccess'));
+		}
+
+		public function appendError($code = '500', $description = 'Internal Error.') {
+			$error = $this->createElement('Error');
+			$error->appendChild($this->createElement('Code', $code));
+			$error->appendChild($this->createElement('Description', $description));
+			$this->root->appendChild($error);
+		}
+
+		public function echoXML() {
+			if( DEV_MODE )
+				echo '<hr><xmp>' . $this->saveXML() . '</xmp>';
+			else {
 				// HTTP/1.1
 				header('Content-Type: text/xml; charset=utf-8');
 				header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -83,9 +113,8 @@ try {
 				// HTTP/1.0
 				header('Pragma: no-cache');
 				echo $this->saveXML();
-			} else
-				echo '<hr><xmp>' . $this->saveXML() . '</xmp>';
-			// $this->saveInHistory();
+				$this->saveInHistory();
+			}
 		}
 
 		private function saveInHistory() {
@@ -132,7 +161,7 @@ try {
 			$response = $stream ? stream_get_contents($stream) : false;
 			if( $response === false )
 				throw new Exception("Failed $method $url: $php_errormsg");
-			$response = json_decode($response);
+			$response = json_decode($response, true);
 			if( $response === null )
 				throw new Exception("Failed to decode $response as json");
 			if( $response->result == 'error' )
@@ -141,48 +170,65 @@ try {
 		}
 
 		private function auth() {
-			$this->token = $this->httpRequestSend('POST', 'https://api.suredone.com/v1/auth', array(
+			$auth = $this->httpRequestSend('POST', 'https://api.suredone.com/v1/auth', array(
 				'user' => $this->username,
 				'pass' => $this->password,
-			))->token;
+			));
+			$this->token = $auth['token'];
 		}
 
-		public function getStoreData() {
+		public function getStore() {
 			$options = $this->httpRequestSend('GET', 'https://api.suredone.com/v1/options/all');
 			return array(
-				'name' => $options->site_user,
-				'companyOrOwner' => $options->business_name,
-				'email' => $options->business_email,
-				'street1' => $options->business_street,
-				'street2' => $options->business_street_2,
-				'city' => $options->business_city,
-				'state' => $options->business_state,
-				'postalCode' => $options->business_zip,
-				'country' => $options->business_country,
-				'phone' => $options->business_phone,
-				'website' => $options->site_domain,
+				'name' => $options['site_user'],
+				'companyOrOwner' => $options['business_name'],
+				'email' => $options['business_email'],
+				'street1' => $options['business_street'],
+				'street2' => $options['business_street_2'],
+				'city' => $options['business_city'],
+				'state' => $options['business_state'],
+				'postalCode' => $options['business_zip'],
+				'country' => $options['business_country'],
+				'phone' => $options['business_phone'],
+				'website' => $options['site_domain'],
 			);
+		}
+
+		public function getStatusCodes() {
+			return array(
+				'100' => 'Awaiting shipment',
+				'101' => 'Shipped',
+			);
+		}
+
+		public function getCount($start) {
+			$orders = $this->httpRequestSend('GET', 'https://api.suredone.com/v1/orders/all?sort=dateupdated');
+			$count = $orders['all'];
+			for( $i = $count; $i >= 1 ; $i-- )
+				if( $start >= $orders[$i]['dateupdated'] )
+					break;
+			return $count - $i;
 		}
 
 	}
 
 
 	// main
-	$suredoneApi = new SuredoneApi($_REQUEST['username'], $_REQUEST['password']);
 	$shipWorksXML = new ShipWorksXML();
+	$suredoneApi = new SuredoneApi($_REQUEST['username'], $_REQUEST['password']);
 
 	switch( $_REQUEST['action'] ) {
 		case 'getmodule':
 			$shipWorksXML->appendModule();
 			break;
 		case 'getstore':
-			$shipWorksXML->appendStore($suredoneApi->getStoreData());
+			$shipWorksXML->appendStore($suredoneApi->getStore());
 			break;
 		case 'getstatuscodes':
-			// $body = $this->getStatusCodes();
+			$shipWorksXML->appendStatusCodes($suredoneApi->getStatusCodes());
 			break;
 		case 'getcount':
-			// $body = $this->getCount();
+			$shipWorksXML->appendOrderCount($suredoneApi->getCount($_REQUEST['start']));
 			break;
 		case 'getorders':
 			// $body = $this->getOrders();
@@ -191,10 +237,15 @@ try {
 		case 'updateshipment':
 			// $body = $this->getUpdate();
 			break;
+		default:
+			throw new Exception('Invalid action');
 	}
 
-	$shipWorksXML->echoXML(true);
-	
+	$shipWorksXML->echoXML();
+
 } catch( Exception $e ) {
-	echo 'Exception: '. $e->getMessage();
+	$shipWorksXML->appendError();
+	$shipWorksXML->echoXML();
+	if( DEV_MODE )
+		echo 'Exception: '. $e->getMessage();
 }
