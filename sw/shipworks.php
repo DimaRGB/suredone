@@ -5,13 +5,11 @@ try {
 	// init cycle
 	// Call 1: GetModule (action=getmodule) 
 	// Call 2: GetStore
-	// Call 3: GetStatusCodes
 
 	// download order cycle
 	// Call 1: GetModule
-	// Call 2: GetStatusCodes 
-	// Call 3: GetCount
-	// Call 4...N: GetOrders - виполняеться бесконечно пока не прийдет пустой ответ
+	// Call 2: GetCount
+	// Call 3...N: GetOrders - виполняеться бесконечно пока не прийдет пустой ответ
 
 	define('DEV_MODE', true);
 
@@ -24,7 +22,7 @@ try {
 	// class for generate xml response for shipworks
 	class ShipWorksXML extends DOMDocument {
 
-		private $moduleVersion = '3.0.1';
+		private $moduleVersion = '3.0.2';
 		private $schemaVersion = '1.0.0';
 
 		public function __construct() {
@@ -49,12 +47,9 @@ try {
 			$capabilities = $this->createElement('Capabilities');
 			$downloadStrategy = $this->createElement('DownloadStrategy', 'ByModifiedTime');
 			$onlineCustomerID = $this->createElement('OnlineCustomerID');
-			$onlineCustomerID->setAttribute('supported', 'true');
-			$onlineCustomerID->setAttribute('dataType', 'numeric');
+			$onlineCustomerID->setAttribute('supported', 'false');
 			$onlineStatus = $this->createElement('OnlineStatus');
-			$onlineStatus->setAttribute('supported', 'true');
-			$onlineStatus->setAttribute('dataType', 'numeric');
-			$onlineStatus->setAttribute('supportsComments', 'true');
+			$onlineStatus->setAttribute('supported', 'false');
 			$onlineShipmentUpdate = $this->createElement('OnlineShipmentUpdate');
 			$onlineShipmentUpdate->setAttribute('supported', 'true');
 			$capabilities->appendChild($downloadStrategy);
@@ -67,28 +62,36 @@ try {
 			$this->root->appendChild($module);
 		}
 
-		public function appendStore($storeData) {
-			$store = $this->createElement('Store');
-			foreach( $storeData as $name => $value ) {
+		public function appendStore($store) {
+			$storeE = $this->createElement('Store');
+			foreach( $store as $name => $value ) {
 				$Name = ucfirst($name);
-				$store->appendChild($this->createElement($Name, $value));
+				$storeE->appendChild($this->createElement($Name, $value));
 			}
-			$this->root->appendChild($store);
-		}
-
-		public function appendStatusCodes($codes) {
-			$statusCodes = $this->createElement('StatusCodes');
-			foreach( $codes as $code => $name ) {
-				$statusCode = $this->createElement('StatusCode');
-				$statusCode->appendChild($this->createElement('Code', $code));
-				$statusCode->appendChild($this->createElement('Name', $name));
-				$statusCodes->appendChild($statusCode);
-			}
-			$this->root->appendChild($statusCodes);
+			$this->root->appendChild($storeE);
 		}
 
 		public function appendOrderCount($count) {
 			$this->root->appendChild($this->createElement('OrderCount', $count));
+		}
+
+		public function appendOrders($orders) {
+			$ordersE = $this->createElement('Orders');
+			foreach( $orders as $order ) {
+				$orderE = $this->createElement('Order');
+				$orderE->appendChild($this->createElement('OrderNumber', $order['order']));
+				$orderE->appendChild($this->createElement('OrderDate', $order['date']));
+				$orderE->appendChild($this->createElement('LastModified', $order['dateupdated']));
+				$orderE->appendChild($this->createElement('ShippingMethod', $order['payment']));
+				// $orderE->appendChild($this->createElement('Notes', $order['email']));
+				$orderE->appendChild($this->createElement('ShippingAddress', $order['saddress1']));
+				$orderE->appendChild($this->createElement('BillingAddress', $order['baddress1']));
+				// $orderE->appendChild($this->createElement('Payment', $order['baddress1']));
+				// $orderE->appendChild($this->createElement('Items', $order['baddress1']));
+				// $orderE->appendChild($this->createElement('Items', $order['baddress1']));
+				$ordersE->appendChild($orderE);
+			}
+			$this->root->appendChild($ordersE);
 		}
 
 		public function appendUpdateSuccess() {
@@ -96,10 +99,10 @@ try {
 		}
 
 		public function appendError($code = '500', $description = 'Internal Error.') {
-			$error = $this->createElement('Error');
-			$error->appendChild($this->createElement('Code', $code));
-			$error->appendChild($this->createElement('Description', $description));
-			$this->root->appendChild($error);
+			$errorE = $this->createElement('Error');
+			$errorE->appendChild($this->createElement('Code', $code));
+			$errorE->appendChild($this->createElement('Description', $description));
+			$this->root->appendChild($errorE);
 		}
 
 		public function echoXML() {
@@ -118,7 +121,10 @@ try {
 		}
 
 		private function saveInHistory() {
-			$fileName = 'history/sw_'.
+			$path = 'history';
+			if( !file_exists($path) )
+				mkdir($path);
+			$fileName = $path .'/sw_'.
 				date('Y-m-d_H-i-s').
 				'-'.
 				(round(microtime(true) * 1000) % 1000).
@@ -148,7 +154,6 @@ try {
 			$url = self::PATH . $url;
 			if( isset($this->token) )
 				$http['header'] = array(
-					// 'Content-Type: multipart/form-data',
 					'X-Auth-User: '. $this->username,
 					'X-Auth-Token: '. $this->token,
 				);
@@ -198,31 +203,47 @@ try {
 			);
 		}
 
-		public function getStatusCodes() {
-			return array(
-				'100' => 'Awaiting shipment',
-				'101' => 'Shipped',
-			);
-		}
-
 		public function getCount($start) {
+			if( !$start )
+				$start = '0000-00-00T00:00:00Z';
 			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=dateupdated');
 			$count = $orders['all'];
 			for( $i = $count; $i >= 1 ; $i-- )
-				if( $start >= $orders[$i]['dateupdated'] )
+				if( $start >= $this->utc($orders[$i]['dateupdated']) )
 					break;
 			return $count - $i;
 		}
 
-		public function updateStatus($order, $status, $comments) {
-
+		public function getOrders($start, $maxcount) {
+			if( !$start )
+				$start = '0000-00-00T00:00:00Z';
+			if( $maxcount <= 0 )
+				$maxcount = 50;
+			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=dateupdated');
+			$count = $orders['all'];
+			for( $i = $count; $i > 0 ; $i-- ) {
+				$orders[$i]['order'] = $this->number($orders[$i]['order']);
+				$orders[$i]['date'] = $this->utc($orders[$i]['date']);
+				$orders[$i]['dateupdated'] = $this->utc($orders[$i]['dateupdated']);
+				if( $start >= $orders[$i]['dateupdated'] )
+					break;
+			}
+			return array_slice($orders, $i, $count - $i > $maxcount ? $maxcount : $count - $i);
 		}
 
 		public function updateShipment($order, $tracking) {
-			$res = $this->sendHttpRequest('POST', 'orders/edit', array(
+			$this->sendHttpRequest('POST', 'orders/edit', array(
 				'order' => $order,
 				'shiptracking' => $tracking,
 			));
+		}
+
+		public function number($value) {
+			return preg_replace('/(\D+)/i', '', $value);
+		}
+
+		public function utc($dateTime) {
+			return str_replace(' ', 'T', $dateTime) . 'Z';
 		}
 
 	}
@@ -239,18 +260,11 @@ try {
 		case 'getstore':
 			$shipWorksXML->appendStore($suredoneApi->getStore());
 			break;
-		case 'getstatuscodes':
-			$shipWorksXML->appendStatusCodes($suredoneApi->getStatusCodes());
-			break;
 		case 'getcount':
 			$shipWorksXML->appendOrderCount($suredoneApi->getCount($_REQUEST['start']));
 			break;
 		case 'getorders':
-			// $body = $this->getOrders();
-			break;
-		case 'updatestatus':
-			$suredoneApi->updateStatus($_REQUEST['order'], $_REQUEST['status'], $_REQUEST['comments']);
-			$shipWorksXML->appendUpdateSuccess();
+			$shipWorksXML->appendOrders($suredoneApi->getOrders($_REQUEST['start'], $_REQUEST['maxcount']));
 			break;
 		case 'updateshipment':
 			$suredoneApi->updateShipment($_REQUEST['order'], $_REQUEST['tracking']);
