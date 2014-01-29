@@ -107,7 +107,6 @@ try {
 			)));
 			$orderE->appendChild($itemsE);
 			$orderE->appendChild($this->createTotalsE($order, array(
-				'total' => 'total',
 				'item' => 'itemtotal',
 				'shipping' => 'shippingtotal',
 				'handling' => 'handlingtotal',
@@ -169,20 +168,27 @@ try {
 				// HTTP/1.0
 				header('Pragma: no-cache');
 				echo $this->saveXML();
-				$this->saveInHistory();
+				$this->writeToLogFile();
 			}
 		}
 
-		private function saveInHistory() {
-			$path = 'history';
-			if( !file_exists($path) )
-				mkdir($path);
-			$fileName = $path .'/sw_'.
-				date('Y-m-d_H-i-s').
-				'-'.
+		private function writeToLogFile() {
+			$fileName = 'requests.log';
+			if( file_exists($fileName) ) {
+				$file = fopen($fileName, 'r') or die;
+				$fileContents = fread($file, filesize($fileName));
+				fclose($file);
+			} else
+				$fileContents = '';
+			$file = fopen($fileName, 'w+') or die;
+			$fileContents .= date('Y-m-d H:i:s').
+				'.'.
 				(round(microtime(true) * 1000) % 1000).
-				'.xml';
-			$this->save($fileName);
+				' -> '.
+				urldecode(http_build_query($_REQUEST)).
+				"\n";
+			fwrite($file, $fileContents);
+			fclose($file);
 		}
 
 	}
@@ -258,7 +264,7 @@ try {
 
 		public function getCount($start) {
 			if( !$start )
-				$start = '0000-00-00T00:00:00Z';
+				$start = '0000-00-00T00:00:00';
 			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=dateupdated');
 			$count = $orders['all'];
 			for( $i = $count; $i >= 1 ; $i-- )
@@ -269,7 +275,7 @@ try {
 
 		public function getOrders($start, $maxcount) {
 			if( !$start )
-				$start = '0000-00-00T00:00:00Z';
+				$start = '0000-00-00T00:00:00';
 			if( $maxcount <= 0 )
 				$maxcount = 50;
 			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=dateupdated');
@@ -292,11 +298,11 @@ try {
 		}
 
 		public function number($value) {
-			return preg_replace('/(\D+)/i', '', $value);
+			return substr(preg_replace('/(\D+)/i', '', $value), -10);
 		}
 
 		public function utc($dateTime) {
-			return str_replace(' ', 'T', $dateTime) . 'Z';
+			return str_replace(' ', 'T', $dateTime);
 		}
 
 	}

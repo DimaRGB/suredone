@@ -1,2 +1,2 @@
-sw/history/
+sw/*.log
 sw/*.json
