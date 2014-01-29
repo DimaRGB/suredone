@@ -11,7 +11,7 @@ try {
 	// Call 2: GetCount
 	// Call 3...N: GetOrders - виполняеться бесконечно пока не прийдет пустой ответ
 
-	define('DEV_MODE', true);
+	define('DEV_MODE', false);
 
 	function echoObj($obj) {
 		echo '<hr><xmp>';
@@ -77,21 +77,74 @@ try {
 
 		public function appendOrders($orders) {
 			$ordersE = $this->createElement('Orders');
-			foreach( $orders as $order ) {
-				$orderE = $this->createElement('Order');
-				$orderE->appendChild($this->createElement('OrderNumber', $order['order']));
-				$orderE->appendChild($this->createElement('OrderDate', $order['date']));
-				$orderE->appendChild($this->createElement('LastModified', $order['dateupdated']));
-				$orderE->appendChild($this->createElement('ShippingMethod', $order['payment']));
-				// $orderE->appendChild($this->createElement('Notes', $order['email']));
-				$orderE->appendChild($this->createElement('ShippingAddress', $order['saddress1']));
-				$orderE->appendChild($this->createElement('BillingAddress', $order['baddress1']));
-				// $orderE->appendChild($this->createElement('Payment', $order['baddress1']));
-				// $orderE->appendChild($this->createElement('Items', $order['baddress1']));
-				// $orderE->appendChild($this->createElement('Items', $order['baddress1']));
-				$ordersE->appendChild($orderE);
-			}
+			foreach( $orders as $order )
+				$ordersE->appendChild($this->createOrderE($order));
 			$this->root->appendChild($ordersE);
+		}
+
+		public function createOrderE($order) {
+			$orderE = $this->createCollectionE('Order', $order, array(
+				'OrderNumber' => 'order',
+				'OrderDate' => 'date',
+				'LastModified' => 'dateupdated',
+				'ShippingMethod' => 'payment',
+			));
+			$orderE->appendChild($this->createAddressE('Shipping', $order, array(
+				'sfirstname', 'slastname', 'sbusiness', 'saddress1', 'saddress2', 'saddress3', 'scity', 'sstate', 'szip', 'scountry', 'sphone',
+			)));
+			$orderE->appendChild($this->createAddressE('Billing', $order, array(
+				'bfirstname', 'blastname', 'bbusiness', 'baddress1', 'baddress2', 'baddress3', 'bcity', 'bstate', 'bzip', 'bcountry', 'bphone',
+			)));
+			$itemsE = $this->createElement('Items');
+			$itemsE->appendChild($this->createCollectionE('Item', $order, array(
+				'Code' => 'code',
+				'SKU' => 'items',
+				'Name' => 'titles',
+				'Quantity' => 'qtys',
+				'UnitPrice' => 'prices',
+				'Image' => 'media',
+				'Weight' => 'weights',
+			)));
+			$orderE->appendChild($itemsE);
+			$orderE->appendChild($this->createTotalsE($order, array(
+				'total' => 'total',
+				'item' => 'itemtotal',
+				'shipping' => 'shippingtotal',
+				'handling' => 'handlingtotal',
+				'tax' => 'taxtotal',
+				'discount' => 'discount',
+			)));
+			return $orderE;
+		}
+
+		public function createAddressE($name, $data, $fields) {
+			return $this->createCollectionE($name .'Address', $data, array(
+				'FirstName', 'LastName', 'Company', 'Street1', 'Street2', 'Street3', 'City', 'State', 'PostalCode', 'Country', 'Phone',
+			), $fields);
+		}
+
+		public function createTotalsE($data, $hash) {
+			$totalsE = $this->createElement('Totals');
+			foreach ($hash as $name => $field) {
+				$totalE = $this->createElement('Total', $data[$field]);
+				$totalE->setAttribute('name', $name);
+				$totalsE->appendChild($totalE);
+			}
+			return $totalsE;
+		}
+
+		public function createCollectionE($name, $data, $hash, $fields = null) {
+			$collectionE = $this->createElement($name);
+			$this->appendChilds($collectionE, $data, $hash, $fields);
+			return $collectionE;
+		}
+
+		public function appendChilds($element, $data, $hash, $fields = null) {
+			foreach( $hash as $key => $value )
+				if( $fields )
+					$element->appendChild($this->createElement($value, $data[$fields[$key]]));
+				else
+					$element->appendChild($this->createElement($key, $data[$value]));
 		}
 
 		public function appendUpdateSuccess() {
