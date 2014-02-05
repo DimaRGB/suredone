@@ -22,7 +22,7 @@ try {
 	// class for generate xml response for shipworks
 	class ShipWorksXML extends DOMDocument {
 
-		private $moduleVersion = '3.0.2';
+		private $moduleVersion = '3.0.3';
 		private $schemaVersion = '1.0.0';
 
 		public function __construct() {
@@ -86,7 +86,7 @@ try {
 			$orderE = $this->createCollectionE('Order', $order, array(
 				'OrderNumber' => 'order',
 				'OrderDate' => 'date',
-				'LastModified' => 'dateupdated',
+				'LastModified' => 'date', // todo: dateupdated
 				'ShippingMethod' => 'payment',
 			));
 			$orderE->appendChild($this->createAddressE('Shipping', $order, array(
@@ -198,6 +198,7 @@ try {
 	class SuredoneApi {
 
 		const PATH = 'https://api.suredone.com/v1/';
+		const MIN_SQL_DATE_TIME = '1753-01-01T12:00:00';
 
 		public function __construct($username, $password) {
 			$this->username = $username;
@@ -264,27 +265,28 @@ try {
 
 		public function getCount($start) {
 			if( !$start )
-				$start = '0000-00-00T00:00:00';
-			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=dateupdated');
+				$start = self::MIN_SQL_DATE_TIME;
+			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=date');
 			$count = $orders['all'];
-			for( $i = $count; $i >= 1 ; $i-- )
-				if( $start >= $this->utc($orders[$i]['dateupdated']) )
+			for( $i = $count; $i >= 1 ; $i-- ) {
+				if( $start >= $this->dateTime($orders[$i]['date']) )
 					break;
+			}
 			return $count - $i;
 		}
 
 		public function getOrders($start, $maxcount) {
 			if( !$start )
-				$start = '0000-00-00T00:00:00';
+				$start = self::MIN_SQL_DATE_TIME;
 			if( $maxcount <= 0 )
 				$maxcount = 50;
-			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=dateupdated');
+			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=date');
 			$count = $orders['all'];
 			for( $i = $count; $i > 0 ; $i-- ) {
 				$orders[$i]['order'] = $this->number($orders[$i]['order']);
-				$orders[$i]['date'] = $this->utc($orders[$i]['date']);
-				$orders[$i]['dateupdated'] = $this->utc($orders[$i]['dateupdated']);
-				if( $start >= $orders[$i]['dateupdated'] )
+				$orders[$i]['date'] = $this->dateTime($orders[$i]['date']);
+				// $orders[$i]['dateupdated'] = $this->dateTime($orders[$i]['dateupdated']); // todo
+				if( $start >= $orders[$i]['date'] )
 					break;
 			}
 			return array_slice($orders, $i, $count - $i > $maxcount ? $maxcount : $count - $i);
@@ -298,11 +300,14 @@ try {
 		}
 
 		public function number($value) {
-			return substr(preg_replace('/(\D+)/i', '', $value), -10);
+			return substr(preg_replace('/(\D+)/i', '', $value), -9);
 		}
 
-		public function utc($dateTime) {
-			return str_replace(' ', 'T', $dateTime);
+		public function dateTime($dateTime) {
+			$dateTime = str_replace(' ', 'T', $dateTime);
+			if( $dateTime < self::MIN_SQL_DATE_TIME )
+				$dateTime = self::MIN_SQL_DATE_TIME;
+			return $dateTime;
 		}
 
 	}
