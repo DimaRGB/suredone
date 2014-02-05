@@ -107,7 +107,6 @@ try {
 			)));
 			$orderE->appendChild($itemsE);
 			$orderE->appendChild($this->createTotalsE($order, array(
-				'item' => 'itemtotal',
 				'shipping' => 'shippingtotal',
 				'handling' => 'handlingtotal',
 				'tax' => 'taxtotal',
