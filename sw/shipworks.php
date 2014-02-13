@@ -84,7 +84,7 @@ try {
 
 		public function createOrderE($order) {
 			$orderE = $this->createCollectionE('Order', $order, array(
-				'OrderNumber' => 'order',
+				'OrderNumber' => 'oid',
 				'OrderDate' => 'date',
 				'LastModified' => 'date', // todo: dateupdated
 				'ShippingMethod' => 'payment',
@@ -103,11 +103,13 @@ try {
 				'Quantity' => 'qtys',
 				'UnitPrice' => 'prices',
 				'Image' => 'media',
-				'Weight' => 'weights',
+				// 'Length' => 'boxlengths',
+				// 'width' => 'boxwidths',
+				// 'height' => 'boxheights',
+				'Weight' => 'boxweights',
 			)));
 			$orderE->appendChild($itemsE);
 			$orderE->appendChild($this->createTotalsE($order, array(
-				'shipping' => 'shippingtotal',
 				'handling' => 'handlingtotal',
 				'tax' => 'taxtotal',
 				'discount' => 'discount',
@@ -267,6 +269,8 @@ try {
 				$start = self::MIN_SQL_DATE_TIME;
 			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=date');
 			$count = $orders['all'];
+			// foreach( $orders as $i => $order )
+			// 	echo $order['date'].' : '.$order['dateupdated']."\n";
 			for( $i = $count; $i >= 1 ; $i-- ) {
 				if( $start >= $this->dateTime($orders[$i]['date']) )
 					break;
@@ -282,24 +286,40 @@ try {
 			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=date');
 			$count = $orders['all'];
 			for( $i = $count; $i > 0 ; $i-- ) {
-				$orders[$i]['order'] = $this->number($orders[$i]['order']);
+				// $orders[$i]['order'] = $this->number($orders[$i]['order']);
 				$orders[$i]['date'] = $this->dateTime($orders[$i]['date']);
 				// $orders[$i]['dateupdated'] = $this->dateTime($orders[$i]['dateupdated']); // todo
+				// $orders[$i]['boxlengths'] = $this->number($orders[$i]['boxlengths']);
+				// $orders[$i]['boxwidths'] = $this->number($orders[$i]['boxwidths']);
+				// $orders[$i]['boxheights'] = $this->number($orders[$i]['boxheights']);
+				$orders[$i]['boxweights'] = $this->number($orders[$i]['boxweights']);
 				if( $start >= $orders[$i]['date'] )
 					break;
 			}
 			return array_slice($orders, $i, $count - $i > $maxcount ? $maxcount : $count - $i);
 		}
 
-		public function updateShipment($order, $tracking) {
+		public function updateShipment($oid, $tracking, $carrier, $shippingcost, $shippingdate) {
+			$order = $this->getOrderNumber($oid);
 			$this->sendHttpRequest('POST', 'orders/edit', array(
 				'order' => $order,
 				'shiptracking' => $tracking,
+				'shipcarrier' => $carrier,
+				'shippingtotal' => $shippingcost,
+				'shipdate' => $shippingdate,
 			));
 		}
 
+		public function getOrderNumber($oid) {
+			$orders = $this->sendHttpRequest('GET', 'orders/all');
+			foreach( $orders as $index => $order )
+				if( $order['oid'] == $oid )
+					return $order['order'];
+			return $oid;
+		}
+
 		public function number($value) {
-			return substr(preg_replace('/(\D+)/i', '', $value), -9);
+			return (int)preg_replace('/(\D+)/i', '', $value) | 1;
 		}
 
 		public function dateTime($dateTime) {
@@ -330,7 +350,7 @@ try {
 			$shipWorksXML->appendOrders($suredoneApi->getOrders($_REQUEST['start'], $_REQUEST['maxcount']));
 			break;
 		case 'updateshipment':
-			$suredoneApi->updateShipment($_REQUEST['order'], $_REQUEST['tracking']);
+			$suredoneApi->updateShipment($_REQUEST['order'], $_REQUEST['tracking'], $_REQUEST['carrier'], $_REQUEST['shippingcost'], $_REQUEST['shippingdate']);
 			$shipWorksXML->appendUpdateSuccess();
 			break;
 		default:
