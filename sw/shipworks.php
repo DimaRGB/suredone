@@ -103,11 +103,23 @@ try {
 				'Quantity' => 'qtys',
 				'UnitPrice' => 'prices',
 				'Image' => 'media',
-				// 'Length' => 'boxlengths',
-				// 'width' => 'boxwidths',
-				// 'height' => 'boxheights',
 				'Weight' => 'boxweights',
 			)));
+			foreach( $itemsE->childNodes as $i => $itemE ) {
+				$attributesE = $this->createElement('Attributes');
+				$attributes = array(
+					'L' => 'boxlengths',
+					'W' => 'boxwidths',
+					'H' => 'boxheights',
+				);
+				foreach( $attributes as $name => $value ) {
+					$attributeE = $this->createElement('Attribute');
+					$attributeE->appendChild($this->createElement('Name', $name));
+					$attributeE->appendChild($this->createElement('Value', $order[$value]));
+					$attributesE->appendChild($attributeE);
+				}
+				$itemE->appendChild($attributesE);
+			}
 			$orderE->appendChild($itemsE);
 			$orderE->appendChild($this->createTotalsE($order, array(
 				'handling' => 'handlingtotal',
@@ -289,9 +301,11 @@ try {
 				// $orders[$i]['order'] = $this->number($orders[$i]['order']);
 				$orders[$i]['date'] = $this->dateTime($orders[$i]['date']);
 				// $orders[$i]['dateupdated'] = $this->dateTime($orders[$i]['dateupdated']); // todo
-				// $orders[$i]['boxlengths'] = $this->number($orders[$i]['boxlengths']);
-				// $orders[$i]['boxwidths'] = $this->number($orders[$i]['boxwidths']);
-				// $orders[$i]['boxheights'] = $this->number($orders[$i]['boxheights']);
+				$orders[$i]['qtys'] = $this->number($orders[$i]['qtys']);
+				$orders[$i]['prices'] = $this->number($orders[$i]['prices']);
+				$orders[$i]['boxlengths'] = $this->number($orders[$i]['boxlengths']);
+				$orders[$i]['boxwidths'] = $this->number($orders[$i]['boxwidths']);
+				$orders[$i]['boxheights'] = $this->number($orders[$i]['boxheights']);
 				$orders[$i]['boxweights'] = $this->number($orders[$i]['boxweights']);
 				if( $start >= $orders[$i]['date'] )
 					break;
@@ -319,7 +333,8 @@ try {
 		}
 
 		public function number($value) {
-			return (int)preg_replace('/(\D+)/i', '', $value) | 1;
+			$value = (int)preg_replace('/(\D+)/i', '', $value);
+			return $value ? $value : 1;
 		}
 
 		public function dateTime($dateTime) {
