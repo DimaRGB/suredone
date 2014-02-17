@@ -86,7 +86,7 @@ try {
 			$orderE = $this->createCollectionE('Order', $order, array(
 				'OrderNumber' => 'oid',
 				'OrderDate' => 'date',
-				'LastModified' => 'date', // todo: dateupdated
+				'LastModified' => 'dateupdated',
 				'ShippingMethod' => 'payment',
 			));
 			$orderE->appendChild($this->createAddressE('Shipping', $order, array(
