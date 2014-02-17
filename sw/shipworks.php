@@ -22,7 +22,7 @@ try {
 	// class for generate xml response for shipworks
 	class ShipWorksXML extends DOMDocument {
 
-		private $moduleVersion = '3.0.3';
+		private $moduleVersion = '3.1.0';
 		private $schemaVersion = '1.0.0';
 
 		public function __construct() {
@@ -194,7 +194,7 @@ try {
 			} else
 				$fileContents = '';
 			$file = fopen($fileName, 'w+') or die;
-			$fileContents .= date('Y-m-d H:i:s').
+			$fileContents .= @date('Y-m-d H:i:s').
 				'.'.
 				(round(microtime(true) * 1000) % 1000).
 				' -> '.
@@ -252,11 +252,7 @@ try {
 		}
 
 		private function auth() {
-			$auth = $this->sendHttpRequest('POST', 'auth', array(
-				'user' => $this->username,
-				'pass' => $this->password,
-			));
-			$this->token = $auth['token'];
+			$this->token = $this->password;
 		}
 
 		public function getStore() {
@@ -276,41 +272,56 @@ try {
 			);
 		}
 
-		public function getCount($start) {
-			if( !$start )
-				$start = self::MIN_SQL_DATE_TIME;
-			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=date');
-			$count = $orders['all'];
-			// foreach( $orders as $i => $order )
-			// 	echo $order['date'].' : '.$order['dateupdated']."\n";
-			for( $i = $count; $i >= 1 ; $i-- ) {
-				if( $start >= $this->dateTime($orders[$i]['date']) )
-					break;
-			}
-			return $count - $i;
+		static function cmpOrder($a, $b) {
+			return $a['dateupdated'] < $b['dateupdated'];
 		}
 
-		public function getOrders($start, $maxcount) {
+		private function getAllOrders($start = SuredoneApi::MIN_SQL_DATE_TIME, $maxcount = 50) {
 			if( !$start )
 				$start = self::MIN_SQL_DATE_TIME;
 			if( $maxcount <= 0 )
 				$maxcount = 50;
-			$orders = $this->sendHttpRequest('GET', 'orders/all?sort=date');
-			$count = $orders['all'];
-			for( $i = $count; $i > 0 ; $i-- ) {
-				// $orders[$i]['order'] = $this->number($orders[$i]['order']);
-				$orders[$i]['date'] = $this->dateTime($orders[$i]['date']);
-				// $orders[$i]['dateupdated'] = $this->dateTime($orders[$i]['dateupdated']); // todo
-				$orders[$i]['qtys'] = $this->number($orders[$i]['qtys']);
-				$orders[$i]['prices'] = $this->number($orders[$i]['prices']);
-				$orders[$i]['boxlengths'] = $this->number($orders[$i]['boxlengths']);
-				$orders[$i]['boxwidths'] = $this->number($orders[$i]['boxwidths']);
-				$orders[$i]['boxheights'] = $this->number($orders[$i]['boxheights']);
-				$orders[$i]['boxweights'] = $this->number($orders[$i]['boxweights']);
-				if( $start >= $orders[$i]['date'] )
+			$allOrders = array();
+			$page = 1;
+			while( $page ) {
+				$orders = $this->sendHttpRequest('GET', 'orders/all?page='. $page++);
+				if( isset($orders['all']) ) {
+					unset($orders['all'], $orders['time']);
+					$allOrders = array_merge($allOrders, $orders);
+				} else
 					break;
 			}
-			return array_slice($orders, $i, $count - $i > $maxcount ? $maxcount : $count - $i);
+			foreach( $allOrders as $i => $order ) {
+				$order['date'] = SuredoneApi::dateTime($order['date']);
+				$order['dateupdated'] = SuredoneApi::dateTime($order['dateupdated']);
+				if( $order['dateupdated'] < $order['date'] )
+					$order['dateupdated'] = $order['date'];
+				$allOrders[$i] = $order;
+			}
+			usort($allOrders, array('SuredoneApi', 'cmpOrder'));
+			$orders = array();
+			for( $i = 0; $i < $maxcount && $allOrders[$i]['dateupdated'] > $start; $i++ )
+				array_push($orders, $allOrders[$i]);
+			return $orders;
+		}
+
+		public function getCount($start) {
+			return count($this->getAllOrders($start));
+		}
+
+		public function getOrders($start, $maxcount) {
+			$orders = $this->getAllOrders($start, $maxcount);
+			foreach( $orders as $i => $order ) {
+				// $order['order'] = $this->number($order['order']);
+				$order['qtys'] = $this->number($order['qtys']);
+				$order['prices'] = $this->number($order['prices']);
+				$order['boxlengths'] = $this->number($order['boxlengths']);
+				$order['boxwidths'] = $this->number($order['boxwidths']);
+				$order['boxheights'] = $this->number($order['boxheights']);
+				$order['boxweights'] = $this->number($order['boxweights']);
+				$orders[$i] = $order;
+			}
+			return $orders;
 		}
 
 		public function updateShipment($oid, $tracking, $carrier, $shippingcost, $shippingdate) {
@@ -325,7 +336,7 @@ try {
 		}
 
 		public function getOrderNumber($oid) {
-			$orders = $this->sendHttpRequest('GET', 'orders/all');
+			$orders = $this->getAllOrders();
 			foreach( $orders as $index => $order )
 				if( $order['oid'] == $oid )
 					return $order['order'];
