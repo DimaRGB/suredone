@@ -186,22 +186,13 @@ try {
 		}
 
 		private function writeToLogFile() {
-			$fileName = 'requests.log';
-			if( file_exists($fileName) ) {
-				$file = fopen($fileName, 'r') or die;
-				$fileContents = fread($file, filesize($fileName));
-				fclose($file);
-			} else
-				$fileContents = '';
-			$file = fopen($fileName, 'w+') or die;
-			$fileContents .= @date('Y-m-d H:i:s').
+			$request = @date('Y-m-d H:i:s').
 				'.'.
 				(round(microtime(true) * 1000) % 1000).
 				' -> '.
 				urldecode(http_build_query($_REQUEST)).
 				"\n";
-			fwrite($file, $fileContents);
-			fclose($file);
+			file_put_contents('requests.log', $request, FILE_APPEND | LOCK_EX);
 		}
 
 	}
@@ -213,10 +204,9 @@ try {
 		const PATH = 'https://api.suredone.com/v1/';
 		const MIN_SQL_DATE_TIME = '1753-01-01T12:00:00';
 
-		public function __construct($username, $password) {
+		public function __construct($username, $token) {
 			$this->username = $username;
-			$this->password = $password;
-			$this->auth();
+			$this->token = $token;
 		}
 
 		private function sendHttpRequest($method, $url, $data = null) {
@@ -249,10 +239,6 @@ try {
 				throw new Exception($response['message'], 504);
 			}
 			return $response;
-		}
-
-		private function auth() {
-			$this->token = $this->password;
 		}
 
 		public function getStore() {
@@ -360,7 +346,7 @@ try {
 
 	// main
 	$shipWorksXML = new ShipWorksXML();
-	$suredoneApi = new SuredoneApi($_REQUEST['username'], $_REQUEST['password']);
+	$suredoneApi = new SuredoneApi($_REQUEST['username'], $_REQUEST['token']);
 
 	switch( $_REQUEST['action'] ) {
 		case 'getmodule':
